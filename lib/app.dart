@@ -29,9 +29,9 @@ class _BigPlantAppState extends State<BigPlantApp> {
       builder: (context, _) {
         return LocaleScope(
           controller: _localeController,
-          child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'AstroLingo Auth',
+            child: MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'BigPlant',
             theme: AppTheme.light(),
             locale: _localeController.locale,
             supportedLocales: const [Locale('en'), Locale('vi')],

@@ -49,7 +49,7 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.wb_sunny, color: AppColors.white, size: 130),
+                const Icon(Icons.eco_rounded, color: AppColors.white, size: 130),
                 const SizedBox(height: 16),
                 Text(
                   t.t('app_name'),
@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Learn English, the cosmic way',
+                  'Grow your plant life beautifully',
                   style: TextStyle(color: AppColors.white, fontSize: 18),
                 ),
                 const SizedBox(height: 52),

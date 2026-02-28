@@ -16,4 +16,11 @@ class AppColors {
 
   static const Color backgroundTop = Color(0xFFEFE7FF);
   static const Color backgroundBottom = Color(0xFFF7F2FF);
+
+  static const Color leafGreen = Color(0xFF2F7B57);
+  static const Color leafGreenDark = Color(0xFF1F5D40);
+  static const Color leafGreenSoft = Color(0xFFE9F5EE);
+  static const Color leafMint = Color(0xFFCDE7D7);
+  static const Color soil = Color(0xFF6E5C4D);
+  static const Color cardBorder = Color(0xFFE2EAE5);
 }

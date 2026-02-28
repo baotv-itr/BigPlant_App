@@ -7,7 +7,7 @@ class AppLocalizations {
 
   static const Map<String, Map<String, String>> _localizedValues = {
     'en': {
-      'app_name': 'AstroLingo',
+      'app_name': 'BigPlant',
       'copyright': 'Copyright 2025 © BigPlant',
       'login_page': 'Login Page',
       'register_page': 'Register Page',
@@ -42,9 +42,9 @@ class AppLocalizations {
       'login_with_google': 'Login with Google',
       'google_coming_soon': 'Google login is not migrated yet',
       'terms':
-          'By logging into AstroLingo, you agree to our Terms and Privacy Policy *',
+          'By logging into BigPlant, you agree to our Terms and Privacy Policy *',
       'register_terms':
-          'By registering into AstroLingo, you agree to our Terms and Privacy Policy *',
+          'By registering into BigPlant, you agree to our Terms and Privacy Policy *',
       'error_username_empty': "Username field shouldn't be empty!",
       'error_password_empty': "Password field shouldn't be empty!",
       'error_password_invalid':
@@ -62,9 +62,29 @@ class AppLocalizations {
       'logout': 'Log out',
       'toast_saved_clipboard': 'Saved to clipboard',
       'toast_success_default': 'Success',
+      'home_tab': 'Home',
+      'scan_tab': 'Scan',
+      'cart_tab': 'Cart',
+      'settings_tab': 'Settings',
+      'home_title': 'Discover Greenery',
+      'home_subtitle': 'Pick healthy plants for your space',
+      'home_search_hint': 'Search plants, pots or accessories',
+      'popular_plants': 'Popular this week',
+      'category_indoor': 'Indoor',
+      'category_outdoor': 'Outdoor',
+      'category_pot': 'Pots',
+      'category_air': 'Air purifier',
+      'cart_title': 'Your Cart',
+      'checkout_now': 'Checkout now',
+      'settings_title': 'Settings',
+      'notify_deals': 'Deal notifications',
+      'notify_tips': 'Plant care tips',
+      'scan_placeholder_title': 'Scan module is coming next',
+      'scan_placeholder_desc':
+          'Camera and photo upload flow will be implemented in the next step.',
     },
     'vi': {
-      'app_name': 'AstroLingo',
+      'app_name': 'BigPlant',
       'copyright': 'Bản quyền 2025 © BigPlant',
       'login_page': 'Đăng nhập',
       'register_page': 'Đăng ký',
@@ -99,9 +119,9 @@ class AppLocalizations {
       'login_with_google': 'Đăng nhập với Google',
       'google_coming_soon': 'Đăng nhập Google chưa được chuyển logic',
       'terms':
-          'Bằng việc đăng nhập vào AstroLingo, bạn đã đồng ý với Điều khoản và chính sách bảo mật *',
+          'Bằng việc đăng nhập vào BigPlant, bạn đã đồng ý với Điều khoản và chính sách bảo mật *',
       'register_terms':
-          'Bằng việc đăng ký vào AstroLingo, bạn đã đồng ý với Điều khoản và chính sách bảo mật *',
+          'Bằng việc đăng ký vào BigPlant, bạn đã đồng ý với Điều khoản và chính sách bảo mật *',
       'error_username_empty': 'Tên tài khoản không được để trống!',
       'error_password_empty': 'Mật khẩu không được để trống!',
       'error_password_invalid': 'Mật khẩu phải có ít nhất 8 ký tự!',
@@ -117,6 +137,26 @@ class AppLocalizations {
       'logout': 'Đăng xuất',
       'toast_saved_clipboard': 'Đã lưu vào bộ nhớ tạm',
       'toast_success_default': 'Thành công',
+      'home_tab': 'Trang chủ',
+      'scan_tab': 'Quét',
+      'cart_tab': 'Giỏ hàng',
+      'settings_tab': 'Cài đặt',
+      'home_title': 'Khám phá cây xanh',
+      'home_subtitle': 'Chọn cây khỏe đẹp cho không gian của bạn',
+      'home_search_hint': 'Tìm cây, chậu hoặc phụ kiện',
+      'popular_plants': 'Sản phẩm nổi bật tuần này',
+      'category_indoor': 'Trong nhà',
+      'category_outdoor': 'Ngoài trời',
+      'category_pot': 'Chậu cây',
+      'category_air': 'Lọc không khí',
+      'cart_title': 'Giỏ hàng của bạn',
+      'checkout_now': 'Thanh toán ngay',
+      'settings_title': 'Cài đặt',
+      'notify_deals': 'Thông báo khuyến mãi',
+      'notify_tips': 'Mẹo chăm sóc cây',
+      'scan_placeholder_title': 'Chức năng quét sẽ triển khai tiếp theo',
+      'scan_placeholder_desc':
+          'Luồng camera và tải ảnh sẽ được triển khai ở bước tiếp theo.',
     },
   };
 

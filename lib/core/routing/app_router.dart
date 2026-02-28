@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../features/auth/presentation/screens/auth_home_screen.dart';
 import '../../features/auth/presentation/screens/forgot_new_password_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/forgot_verify_screen.dart';
@@ -9,6 +8,7 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/register_verify_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/success_screen.dart';
+import '../../features/shop/presentation/screens/main_shell_screen.dart';
 
 class AppRouter {
   static const String splash = '/';
@@ -53,7 +53,7 @@ class AppRouter {
         final mode = settings.arguments as SuccessMode? ?? SuccessMode.verify;
         return MaterialPageRoute(builder: (_) => SuccessScreen(mode: mode));
       case authHome:
-        return MaterialPageRoute(builder: (_) => const AuthHomeScreen());
+        return MaterialPageRoute(builder: (_) => const MainShellScreen());
       default:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
     }
