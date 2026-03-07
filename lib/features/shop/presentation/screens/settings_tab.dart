@@ -56,7 +56,7 @@ class _SettingsTabState extends State<SettingsTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Plant Lover',
+                        'Bao Tran',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -64,7 +64,7 @@ class _SettingsTabState extends State<SettingsTab> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'bigplant@example.com',
+                        'tranvubao2004@gmail.com',
                         style: TextStyle(color: AppColors.darkGrey),
                       ),
                     ],

@@ -1,0 +1,69 @@
+{
+  "name": "BigPlant OpenCode Config",
+  "version": "1.0.0",
+  "updated_at": "2026-03-07",
+  "context": [
+    "context/project_overview.md",
+    "context/database_architecture.md"
+  ],
+  "agents": [
+    {
+      "id": "bigplant-architect",
+      "file": "agents/bigplant-architect.md",
+      "default_skills": [
+        "system-overview",
+        "auth-flow",
+        "scan-flow"
+      ]
+    },
+    {
+      "id": "flutter-feature-dev",
+      "file": "agents/flutter-feature-dev.md",
+      "default_skills": [
+        "auth-flow",
+        "shop-flow",
+        "scan-flow",
+        "localization"
+      ]
+    },
+    {
+      "id": "integration-qa",
+      "file": "agents/integration-qa.md",
+      "default_skills": [
+        "api-integration",
+        "scan-flow",
+        "release-checklist"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "id": "system-overview",
+      "file": "skills/system-overview.md"
+    },
+    {
+      "id": "auth-flow",
+      "file": "skills/auth-flow.md"
+    },
+    {
+      "id": "shop-flow",
+      "file": "skills/shop-flow.md"
+    },
+    {
+      "id": "scan-flow",
+      "file": "skills/scan-flow.md"
+    },
+    {
+      "id": "api-integration",
+      "file": "skills/api-integration.md"
+    },
+    {
+      "id": "localization",
+      "file": "skills/localization.md"
+    },
+    {
+      "id": "release-checklist",
+      "file": "skills/release-checklist.md"
+    }
+  ]
+}
