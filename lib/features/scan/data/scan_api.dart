@@ -8,68 +8,55 @@ import '../../../core/network/api_client.dart';
 import '../../auth/data/storage_service.dart';
 
 class ScanApi {
-  static const List<String> _endpointCandidates = [
-    'api/plant/scan',
-    'api/plants/scan',
-    'api/scan',
-    'predict/file',
-    'predict',
-  ];
-
-  static const List<String> _fileFieldCandidates = ['image', 'file', 'plant_image'];
+  static const String _scanEndpoint = 'api/plant_detect?topk=5&two_pass=true';
+  static const String _fileField = 'file';
 
   Future<Map<String, dynamic>> scanPlant({
     required Uint8List imageBytes,
     required String fileName,
   }) async {
     final token = await StorageService.getToken();
-    final errors = <String>[];
+    final uri = _buildUri();
+    try {
+      final request = http.MultipartRequest('POST', uri);
+      request.headers.addAll({
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          _fileField,
+          imageBytes,
+          filename: fileName,
+        ),
+      );
 
-    for (final endpoint in _endpointCandidates) {
-      for (final fileField in _fileFieldCandidates) {
-        final uri = _buildUri(endpoint);
-        try {
-          final request = http.MultipartRequest('POST', uri);
-          request.headers.addAll({
-            if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          });
-          request.files.add(
-            http.MultipartFile.fromBytes(
-              fileField,
-              imageBytes,
-              filename: fileName,
-            ),
-          );
+      final streamed = await request.send().timeout(
+        const Duration(seconds: 20),
+      );
+      final response = await http.Response.fromStream(streamed);
 
-          final streamed = await request.send().timeout(
-            const Duration(seconds: 20),
-          );
-          final response = await http.Response.fromStream(streamed);
-
-          if (response.statusCode >= 200 && response.statusCode < 300) {
-            return _decode(response.body);
-          }
-
-          errors.add(
-            '${response.statusCode} ${uri.path} field=$fileField',
-          );
-        } catch (e) {
-          errors.add('$endpoint field=$fileField: $e');
-        }
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return _decode(response.body);
       }
-    }
 
-    throw ApiException(
-      message: 'Scan endpoint unreachable. Tried: ${errors.take(4).join(' | ')}',
-      statusCode: 500,
-    );
+      throw ApiException(
+        message: 'Scan failed (${response.statusCode}): ${response.body}',
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Scan endpoint unreachable: $e',
+        statusCode: 500,
+      );
+    }
   }
 
-  Uri _buildUri(String endpoint) {
-    final base = ApiConstants.baseScanUrl;
+  Uri _buildUri() {
+    final base = ApiConstants.baseUrl;
     final normalizedBase = base.endsWith('/') ? base : '$base/';
-    return Uri.parse('$normalizedBase$endpoint');
+    return Uri.parse('$normalizedBase$_scanEndpoint');
   }
 
   Map<String, dynamic> _decode(String responseBody) {

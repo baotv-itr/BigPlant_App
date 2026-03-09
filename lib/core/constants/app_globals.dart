@@ -3,5 +3,4 @@ class AppGlobals {
 
   static String currentLanguageCode = 'en';
   static bool useLocalApi = true;
-  static bool useLocalScanApi = true;
 }

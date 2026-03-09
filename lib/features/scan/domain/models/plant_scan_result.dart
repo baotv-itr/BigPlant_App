@@ -33,7 +33,7 @@ class PlantScanResult {
     final payload = _toMap(
       _pickValue(
         json,
-        const ['result', 'data', 'prediction', 'plant', 'output', 'response'],
+        const ['result', 'data', 'prediction', 'plant', 'output', 'response', 'res'],
       ),
     );
     final source = payload.isNotEmpty ? payload : json;
@@ -59,7 +59,7 @@ class PlantScanResult {
         _pickValue(source, const ['scientific_name', 'binomial_name']),
       ),
       family: _stringOrEmpty(_pickValue(source, const ['family', 'ho'])),
-      order: _stringOrEmpty(_pickValue(source, const ['order', 'bo'])),
+      order: _stringOrEmpty(_pickValue(source, const ['taxonomic_order', 'order', 'bo'])),
       genus: _stringOrEmpty(_pickValue(source, const ['genus', 'chi'])),
       species: _stringOrEmpty(_pickValue(source, const ['species', 'loai'])),
       uses: _stringOrEmpty(_pickValue(source, const ['uses', 'utility', 'cong_dung'])),
