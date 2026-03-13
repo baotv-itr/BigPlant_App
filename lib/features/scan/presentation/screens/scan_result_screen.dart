@@ -76,6 +76,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     final hasMap = widget.result.distributionPoints.isNotEmpty;
     final hasDistributionDetails =
         hasMap || widget.result.distributionAreas.isNotEmpty;
+    final distributionItemCount = hasMap
+        ? widget.result.distributionPoints.length
+        : widget.result.distributionAreas.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F8F4),
@@ -159,17 +162,19 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                           Positioned(
                             right: 10,
                             top: 10,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: AppColors.white.withValues(alpha: 0.92),
+                            child: Material(
+                              color: AppColors.white.withValues(alpha: 0.95),
+                              borderRadius: BorderRadius.circular(10),
+                              child: InkWell(
+                                onTap: () => _openExpandedMap(context),
                                 borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Padding(
-                                padding: EdgeInsets.all(6),
-                                child: Icon(
-                                  Icons.open_in_full_rounded,
-                                  size: 18,
-                                  color: AppColors.blackLight,
+                                child: const Padding(
+                                  padding: EdgeInsets.all(7),
+                                  child: Icon(
+                                    Icons.open_in_full_rounded,
+                                    size: 18,
+                                    color: AppColors.blackLight,
+                                  ),
                                 ),
                               ),
                             ),
@@ -196,13 +201,11 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   ),
                 if (hasDistributionDetails) const SizedBox(height: 6),
                 if (hasDistributionDetails)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () => _showDistributionDetails(context),
-                      icon: const Icon(Icons.list_alt_rounded, size: 18),
-                      label: Text(t.t('distribution_view_details')),
-                    ),
+                  _buildDetailAction(
+                    context: context,
+                    label: t.t('distribution_view_details'),
+                    count: distributionItemCount,
+                    onTap: () => _showDistributionDetails(context),
                   ),
               ],
             ),
@@ -222,6 +225,68 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         backgroundColor: AppColors.leafGreen,
         foregroundColor: AppColors.white,
         child: Icon(_isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded),
+      ),
+    );
+  }
+
+  Widget _buildDetailAction({
+    required BuildContext context,
+    required String label,
+    required int count,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.leafGreenSoft,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.leafMint),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.list_alt_rounded,
+                size: 20,
+                color: AppColors.leafGreenDark,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.leafGreenDark,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    color: AppColors.leafGreenDark,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.keyboard_arrow_right_rounded,
+                color: AppColors.leafGreenDark,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
