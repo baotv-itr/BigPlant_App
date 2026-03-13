@@ -1,14 +1,14 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../domain/models/plant_scan_result.dart';
 
-class ScanResultScreen extends StatelessWidget {
+class ScanResultScreen extends StatefulWidget {
   const ScanResultScreen({
     required this.imageBytes,
     required this.result,
@@ -18,10 +18,62 @@ class ScanResultScreen extends StatelessWidget {
   final Uint8List imageBytes;
   final PlantScanResult result;
 
+  static String valueOrPlaceholder(String value) {
+    final text = value.trim();
+    return text.isEmpty ? '-' : text;
+  }
+
+  @override
+  State<ScanResultScreen> createState() => _ScanResultScreenState();
+}
+
+class _ScanResultScreenState extends State<ScanResultScreen> {
+  final FlutterTts _tts = FlutterTts();
+  bool _isSpeaking = false;
+  bool _ttsReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initTts();
+  }
+
+  Future<void> _initTts() async {
+    try {
+      await _tts.setPitch(1.0);
+      await _tts.setSpeechRate(0.45);
+      await _tts.setVolume(1.0);
+      _ttsReady = true;
+    } on MissingPluginException {
+      _ttsReady = false;
+    } on PlatformException {
+      _ttsReady = false;
+    }
+
+    _tts.setCompletionHandler(() {
+      if (!mounted) return;
+      setState(() => _isSpeaking = false);
+    });
+    _tts.setCancelHandler(() {
+      if (!mounted) return;
+      setState(() => _isSpeaking = false);
+    });
+    _tts.setErrorHandler((_) {
+      if (!mounted) return;
+      setState(() => _isSpeaking = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tts.stop();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final hasMap = result.distributionPoints.isNotEmpty;
+    final hasMap = widget.result.distributionPoints.isNotEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F8F4),
@@ -39,15 +91,15 @@ class ScanResultScreen extends StatelessWidget {
             title: t.t('plant_identity'),
             child: Column(
               children: [
-                _InfoRow(label: t.t('field_common_name'), value: result.displayName),
+                _InfoRow(label: t.t('field_common_name'), value: widget.result.displayName),
                 _InfoRow(
                   label: t.t('field_scientific_name'),
-                  value: result.scientificName,
+                  value: widget.result.scientificName,
                 ),
-                _InfoRow(label: t.t('field_family'), value: result.family),
-                _InfoRow(label: t.t('field_order'), value: result.order),
-                _InfoRow(label: t.t('field_genus'), value: result.genus),
-                _InfoRow(label: t.t('field_species'), value: result.species),
+                _InfoRow(label: t.t('field_family'), value: widget.result.family),
+                _InfoRow(label: t.t('field_order'), value: widget.result.order),
+                _InfoRow(label: t.t('field_genus'), value: widget.result.genus),
+                _InfoRow(label: t.t('field_species'), value: widget.result.species),
               ],
             ),
           ),
@@ -55,7 +107,7 @@ class ScanResultScreen extends StatelessWidget {
           _sectionCard(
             title: t.t('field_description'),
             child: Text(
-              _valueOrPlaceholder(result.description),
+              ScanResultScreen.valueOrPlaceholder(widget.result.description),
               style: const TextStyle(height: 1.45),
             ),
           ),
@@ -63,7 +115,7 @@ class ScanResultScreen extends StatelessWidget {
           _sectionCard(
             title: t.t('field_uses'),
             child: Text(
-              _valueOrPlaceholder(result.uses),
+              ScanResultScreen.valueOrPlaceholder(widget.result.uses),
               style: const TextStyle(height: 1.45),
             ),
           ),
@@ -71,7 +123,7 @@ class ScanResultScreen extends StatelessWidget {
           _sectionCard(
             title: t.t('field_advantages'),
             child: Text(
-              _valueOrPlaceholder(result.advantages),
+              ScanResultScreen.valueOrPlaceholder(widget.result.advantages),
               style: const TextStyle(height: 1.45),
             ),
           ),
@@ -81,11 +133,11 @@ class ScanResultScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (result.distributionAreas.isNotEmpty)
+                if (widget.result.distributionAreas.isNotEmpty)
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: result.distributionAreas
+                    children: widget.result.distributionAreas
                         .map(
                           (area) => Container(
                             padding: const EdgeInsets.symmetric(
@@ -101,7 +153,7 @@ class ScanResultScreen extends StatelessWidget {
                         )
                         .toList(),
                   ),
-                if (result.distributionAreas.isNotEmpty) const SizedBox(height: 10),
+                if (widget.result.distributionAreas.isNotEmpty) const SizedBox(height: 10),
                 if (hasMap)
                   SizedBox(
                     height: 220,
@@ -109,7 +161,7 @@ class ScanResultScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                       child: FlutterMap(
                         options: MapOptions(
-                          initialCenter: _centerPoint(result.distributionPoints),
+                          initialCenter: _centerPoint(widget.result.distributionPoints),
                           initialZoom: 2.8,
                         ),
                         children: [
@@ -119,7 +171,7 @@ class ScanResultScreen extends StatelessWidget {
                             userAgentPackageName: 'com.bigplant.app',
                           ),
                           MarkerLayer(
-                            markers: result.distributionPoints
+                            markers: widget.result.distributionPoints
                                 .map(
                                   (point) => Marker(
                                     point: LatLng(point.lat, point.lng),
@@ -161,17 +213,114 @@ class ScanResultScreen extends StatelessWidget {
           _sectionCard(
             title: t.t('field_note'),
             child: Text(
-              _valueOrPlaceholder(result.note),
+              ScanResultScreen.valueOrPlaceholder(widget.result.note),
               style: const TextStyle(height: 1.35, color: AppColors.darkGrey),
             ),
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _toggleRead(context),
+        backgroundColor: AppColors.leafGreen,
+        foregroundColor: AppColors.white,
+        child: Icon(
+          _isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+        ),
+      ),
     );
   }
 
+  Future<void> _toggleRead(BuildContext context) async {
+    if (!_ttsReady) {
+      _showTtsUnavailable(context);
+      return;
+    }
+
+    if (_isSpeaking) {
+      await _tts.stop();
+      if (!mounted) return;
+      setState(() => _isSpeaking = false);
+      return;
+    }
+
+    final text = _buildReadText(context);
+    if (text.isEmpty) return;
+
+    final locale = Localizations.localeOf(context);
+    final languageCode = locale.languageCode.toLowerCase();
+    try {
+      await _tts.setLanguage(languageCode == 'vi' ? 'vi-VN' : 'en-US');
+    } on MissingPluginException {
+      if (!context.mounted) return;
+      _ttsReady = false;
+      _showTtsUnavailable(context);
+      return;
+    } on PlatformException {
+      if (!context.mounted) return;
+      _showTtsUnavailable(context);
+      return;
+    }
+
+    int speakResult;
+    try {
+      speakResult = await _tts.speak(text);
+    } on MissingPluginException {
+      if (!context.mounted) return;
+      _ttsReady = false;
+      _showTtsUnavailable(context);
+      return;
+    } on PlatformException {
+      if (!context.mounted) return;
+      _showTtsUnavailable(context);
+      return;
+    }
+
+    if (!mounted) return;
+    if (speakResult == 1) {
+      setState(() => _isSpeaking = true);
+    }
+  }
+
+  void _showTtsUnavailable(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Text-to-speech is unavailable. Please restart the app.'),
+      ),
+    );
+  }
+
+  String _buildReadText(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final lines = <String>[];
+
+    void addLine(String label, String value) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) return;
+      lines.add('$label: $trimmed.');
+    }
+
+    addLine(t.t('field_common_name'), widget.result.displayName);
+    addLine(t.t('field_scientific_name'), widget.result.scientificName);
+    addLine(t.t('field_family'), widget.result.family);
+    addLine(t.t('field_order'), widget.result.order);
+    addLine(t.t('field_genus'), widget.result.genus);
+    addLine(t.t('field_species'), widget.result.species);
+    addLine(t.t('field_description'), widget.result.description);
+    addLine(t.t('field_uses'), widget.result.uses);
+    addLine(t.t('field_advantages'), widget.result.advantages);
+
+    if (widget.result.distributionAreas.isNotEmpty) {
+      addLine(
+        t.t('distribution_map'),
+        widget.result.distributionAreas.join(', '),
+      );
+    }
+
+    return lines.join(' ');
+  }
+
   Widget _imageHeader(BuildContext context, AppLocalizations t) {
-    final confidence = result.confidence;
+    final confidence = widget.result.confidence;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -184,7 +333,7 @@ class ScanResultScreen extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.memory(
-              imageBytes,
+              widget.imageBytes,
               width: 92,
               height: 92,
               fit: BoxFit.cover,
@@ -196,7 +345,7 @@ class ScanResultScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _valueOrPlaceholder(result.displayName),
+                  ScanResultScreen.valueOrPlaceholder(widget.result.displayName),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -207,7 +356,7 @@ class ScanResultScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  _valueOrPlaceholder(result.scientificName),
+                  ScanResultScreen.valueOrPlaceholder(widget.result.scientificName),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -273,10 +422,6 @@ class ScanResultScreen extends StatelessWidget {
     return LatLng(latAvg, lngAvg);
   }
 
-  static String _valueOrPlaceholder(String value) {
-    final text = value.trim();
-    return text.isEmpty ? '-' : text;
-  }
 }
 
 class _InfoRow extends StatelessWidget {
@@ -305,7 +450,7 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              ScanResultScreen._valueOrPlaceholder(value),
+              ScanResultScreen.valueOrPlaceholder(value),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
