@@ -74,6 +74,8 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final hasMap = widget.result.distributionPoints.isNotEmpty;
+    final hasDistributionDetails =
+        hasMap || widget.result.distributionAreas.isNotEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F8F4),
@@ -91,15 +93,24 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
             title: t.t('plant_identity'),
             child: Column(
               children: [
-                _InfoRow(label: t.t('field_common_name'), value: widget.result.displayName),
+                _InfoRow(
+                  label: t.t('field_common_name'),
+                  value: widget.result.displayName,
+                ),
                 _InfoRow(
                   label: t.t('field_scientific_name'),
                   value: widget.result.scientificName,
                 ),
-                _InfoRow(label: t.t('field_family'), value: widget.result.family),
+                _InfoRow(
+                  label: t.t('field_family'),
+                  value: widget.result.family,
+                ),
                 _InfoRow(label: t.t('field_order'), value: widget.result.order),
                 _InfoRow(label: t.t('field_genus'), value: widget.result.genus),
-                _InfoRow(label: t.t('field_species'), value: widget.result.species),
+                _InfoRow(
+                  label: t.t('field_species'),
+                  value: widget.result.species,
+                ),
               ],
             ),
           ),
@@ -133,58 +144,35 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (widget.result.distributionAreas.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: widget.result.distributionAreas
-                        .map(
-                          (area) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.leafGreenSoft,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(area),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                if (widget.result.distributionAreas.isNotEmpty) const SizedBox(height: 10),
                 if (hasMap)
                   SizedBox(
                     height: 220,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(14),
-                      child: FlutterMap(
-                        options: MapOptions(
-                          initialCenter: _centerPoint(widget.result.distributionPoints),
-                          initialZoom: 2.8,
-                        ),
+                      child: Stack(
                         children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.bigplant.app',
+                          _buildDistributionMap(
+                            points: widget.result.distributionPoints,
+                            initialZoom: 2.8,
+                            onTap: () => _openExpandedMap(context),
                           ),
-                          MarkerLayer(
-                            markers: widget.result.distributionPoints
-                                .map(
-                                  (point) => Marker(
-                                    point: LatLng(point.lat, point.lng),
-                                    width: 38,
-                                    height: 38,
-                                    child: const Icon(
-                                      Icons.location_on_rounded,
-                                      color: AppColors.leafGreenDark,
-                                      size: 32,
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                          Positioned(
+                            right: 10,
+                            top: 10,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: AppColors.white.withValues(alpha: 0.92),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Padding(
+                                padding: EdgeInsets.all(6),
+                                child: Icon(
+                                  Icons.open_in_full_rounded,
+                                  size: 18,
+                                  color: AppColors.blackLight,
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -206,6 +194,16 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                       ),
                     ),
                   ),
+                if (hasDistributionDetails) const SizedBox(height: 6),
+                if (hasDistributionDetails)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => _showDistributionDetails(context),
+                      icon: const Icon(Icons.list_alt_rounded, size: 18),
+                      label: Text(t.t('distribution_view_details')),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -223,9 +221,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         onPressed: () => _toggleRead(context),
         backgroundColor: AppColors.leafGreen,
         foregroundColor: AppColors.white,
-        child: Icon(
-          _isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded,
-        ),
+        child: Icon(_isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded),
       ),
     );
   }
@@ -345,7 +341,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  ScanResultScreen.valueOrPlaceholder(widget.result.displayName),
+                  ScanResultScreen.valueOrPlaceholder(
+                    widget.result.displayName,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -356,7 +354,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  ScanResultScreen.valueOrPlaceholder(widget.result.scientificName),
+                  ScanResultScreen.valueOrPlaceholder(
+                    widget.result.scientificName,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -366,7 +366,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.leafGreenSoft,
                     borderRadius: BorderRadius.circular(14),
@@ -415,13 +418,144 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     );
   }
 
-  LatLng _centerPoint(List<PlantDistributionPoint> points) {
-    if (points.isEmpty) return const LatLng(16.0471, 108.2068);
-    final latAvg = points.fold<double>(0, (sum, item) => sum + item.lat) / points.length;
-    final lngAvg = points.fold<double>(0, (sum, item) => sum + item.lng) / points.length;
-    return LatLng(latAvg, lngAvg);
+  Widget _buildDistributionMap({
+    required List<PlantDistributionPoint> points,
+    required double initialZoom,
+    VoidCallback? onTap,
+  }) {
+    return FlutterMap(
+      options: MapOptions(
+        initialCenter: _centerPoint(points),
+        initialZoom: initialZoom,
+        onTap: onTap == null ? null : (_, _) => onTap(),
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.bigplant.app',
+        ),
+        MarkerLayer(
+          markers: points
+              .map(
+                (point) => Marker(
+                  point: LatLng(point.lat, point.lng),
+                  width: 38,
+                  height: 38,
+                  child: const Icon(
+                    Icons.location_on_rounded,
+                    color: AppColors.leafGreenDark,
+                    size: 32,
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ],
+    );
   }
 
+  Future<void> _openExpandedMap(BuildContext context) async {
+    final t = AppLocalizations.of(context);
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(
+            title: Text(t.t('distribution_map')),
+            backgroundColor: AppColors.leafGreen,
+            foregroundColor: AppColors.white,
+          ),
+          body: _buildDistributionMap(
+            points: widget.result.distributionPoints,
+            initialZoom: 4.0,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showDistributionDetails(BuildContext context) async {
+    final t = AppLocalizations.of(context);
+    final pointItems = widget.result.distributionPoints;
+    final areaItems = widget.result.distributionAreas;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(sheetContext).size.height * 0.7,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t.t('distribution_detail_title'),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: pointItems.isNotEmpty
+                          ? pointItems.length
+                          : areaItems.length,
+                      separatorBuilder: (_, _) => const Divider(
+                        height: 16,
+                        color: AppColors.cardBorder,
+                      ),
+                      itemBuilder: (_, index) {
+                        if (pointItems.isNotEmpty) {
+                          final point = pointItems[index];
+                          final title = point.label.trim().isEmpty
+                              ? '${t.t('distribution_location')} ${index + 1}'
+                              : point.label;
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(
+                              Icons.place_rounded,
+                              color: AppColors.leafGreenDark,
+                            ),
+                            title: Text(title),
+                            subtitle: Text(
+                              '${point.lat.toStringAsFixed(4)}, ${point.lng.toStringAsFixed(4)}',
+                            ),
+                          );
+                        }
+
+                        final area = areaItems[index];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(
+                            Icons.location_city_rounded,
+                            color: AppColors.leafGreenDark,
+                          ),
+                          title: Text(area),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  LatLng _centerPoint(List<PlantDistributionPoint> points) {
+    if (points.isEmpty) return const LatLng(16.0471, 108.2068);
+    final latAvg =
+        points.fold<double>(0, (sum, item) => sum + item.lat) / points.length;
+    final lngAvg =
+        points.fold<double>(0, (sum, item) => sum + item.lng) / points.length;
+    return LatLng(latAvg, lngAvg);
+  }
 }
 
 class _InfoRow extends StatelessWidget {

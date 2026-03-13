@@ -31,46 +31,72 @@ class PlantScanResult {
 
   factory PlantScanResult.fromApi(Map<String, dynamic> json) {
     final payload = _toMap(
-      _pickValue(
-        json,
-        const ['result', 'data', 'prediction', 'plant', 'output', 'response', 'res'],
-      ),
+      _pickValue(json, const [
+        'result',
+        'data',
+        'prediction',
+        'plant',
+        'output',
+        'response',
+        'res',
+      ]),
     );
-    final source = payload.isNotEmpty ? payload : json;
+    final sourceCandidate = payload.isNotEmpty ? payload : json;
+    final plantSource = _toMap(_pickValue(sourceCandidate, const ['plant']));
+    final source = plantSource.isNotEmpty ? plantSource : sourceCandidate;
 
     final points = _parseDistributionPoints(
-      _pickValue(
-        source,
-        const ['distribution_points', 'locations', 'coordinates', 'map_points'],
-      ),
+      _pickValue(source, const [
+        'distribution_points',
+        'locations',
+        'coordinates',
+        'map_points',
+        'distribution',
+      ]),
     );
 
     final areas = _parseStringList(
-      _pickValue(source, const ['distribution_areas', 'distribution', 'regions']),
+      _pickValue(source, const [
+        'distribution_areas',
+        'distribution',
+        'regions',
+      ]),
     );
 
     final noteRaw = _pickValue(source, const ['note', 'notes', 'raw', 'debug']);
 
     return PlantScanResult(
       displayName: _stringOrEmpty(
-        _pickValue(source, const ['name', 'label', 'plant_name', 'common_name']),
+        _pickValue(source, const [
+          'name',
+          'label',
+          'plant_name',
+          'common_name',
+        ]),
       ),
       scientificName: _stringOrEmpty(
         _pickValue(source, const ['scientific_name', 'binomial_name']),
       ),
       family: _stringOrEmpty(_pickValue(source, const ['family', 'ho'])),
-      order: _stringOrEmpty(_pickValue(source, const ['taxonomic_order', 'order', 'bo'])),
+      order: _stringOrEmpty(
+        _pickValue(source, const ['taxonomic_order', 'order', 'bo']),
+      ),
       genus: _stringOrEmpty(_pickValue(source, const ['genus', 'chi'])),
       species: _stringOrEmpty(_pickValue(source, const ['species', 'loai'])),
-      uses: _stringOrEmpty(_pickValue(source, const ['uses', 'utility', 'cong_dung'])),
+      uses: _stringOrEmpty(
+        _pickValue(source, const ['uses', 'utility', 'cong_dung']),
+      ),
       advantages: _stringOrEmpty(
         _pickValue(source, const ['advantages', 'benefits', 'uu_diem']),
       ),
       description: _stringOrEmpty(
-        _pickValue(
-          source,
-          const ['description', 'desc', 'summary', 'detail', 'information'],
-        ),
+        _pickValue(source, const [
+          'description',
+          'desc',
+          'summary',
+          'detail',
+          'information',
+        ]),
       ),
       confidence: _asDouble(
         _pickValue(source, const ['confidence', 'score', 'probability']),
@@ -123,7 +149,20 @@ class PlantScanResult {
       return [cleaned];
     }
     if (raw is List) {
-      return raw.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+      return raw
+          .map((item) {
+            if (item is Map) {
+              final map = item.map(
+                (key, value) => MapEntry(key.toString(), value),
+              );
+              return _stringOrEmpty(
+                map['label'] ?? map['name'] ?? map['value'],
+              );
+            }
+            return item.toString().trim();
+          })
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
     return [raw.toString()];
   }
