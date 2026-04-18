@@ -6,17 +6,22 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../domain/scan_service.dart';
 import '../../domain/models/plant_scan_result.dart';
 
 class ScanResultScreen extends StatefulWidget {
   const ScanResultScreen({
     required this.imageBytes,
     required this.result,
+    this.fetchDetailsFromApi = false,
+    this.detailFetchFileName = 'camera_scan.jpg',
     super.key,
   });
 
   final Uint8List imageBytes;
   final PlantScanResult result;
+  final bool fetchDetailsFromApi;
+  final String detailFetchFileName;
 
   static String valueOrPlaceholder(String value) {
     final text = value.trim();
@@ -29,13 +34,51 @@ class ScanResultScreen extends StatefulWidget {
 
 class _ScanResultScreenState extends State<ScanResultScreen> {
   final FlutterTts _tts = FlutterTts();
+  final ScanService _scanService = ScanService();
+
   bool _isSpeaking = false;
   bool _ttsReady = false;
+  bool _fetchingDetails = false;
+  String? _fetchError;
+  PlantScanResult? _fetchedDetails;
 
   @override
   void initState() {
     super.initState();
     _initTts();
+    if (widget.fetchDetailsFromApi) {
+      _fetchDetailsFromApi();
+    }
+  }
+
+  PlantScanResult get _contentResult => _fetchedDetails ?? widget.result;
+
+  Future<void> _fetchDetailsFromApi() async {
+    setState(() {
+      _fetchingDetails = true;
+      _fetchError = null;
+    });
+    try {
+      final apiResult = await _scanService.scanPlant(
+        imageBytes: widget.imageBytes,
+        fileName: widget.detailFetchFileName,
+      );
+      if (!mounted) return;
+      setState(() {
+        _fetchedDetails = apiResult;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _fetchError = e.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _fetchingDetails = false;
+        });
+      }
+    }
   }
 
   Future<void> _initTts() async {
@@ -73,12 +116,13 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final hasMap = widget.result.distributionPoints.isNotEmpty;
+    final content = _contentResult;
+    final hasMap = content.distributionPoints.isNotEmpty;
     final hasDistributionDetails =
-        hasMap || widget.result.distributionAreas.isNotEmpty;
+        hasMap || content.distributionAreas.isNotEmpty;
     final distributionItemCount = hasMap
-        ? widget.result.distributionPoints.length
-        : widget.result.distributionAreas.length;
+        ? content.distributionPoints.length
+        : content.distributionAreas.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F8F4),
@@ -92,27 +136,53 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         children: [
           _imageHeader(context, t),
           const SizedBox(height: 14),
+          if (_fetchingDetails)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: LinearProgressIndicator(
+                minHeight: 4,
+                borderRadius: BorderRadius.circular(99),
+                color: AppColors.leafGreen,
+                backgroundColor: AppColors.leafMint,
+              ),
+            ),
+          if (_fetchError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3E0),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFD8A8)),
+                ),
+                child: Text(
+                  _fetchError!,
+                  style: const TextStyle(color: Color(0xFF8A4B00)),
+                ),
+              ),
+            ),
           _sectionCard(
             title: t.t('plant_identity'),
             child: Column(
               children: [
                 _InfoRow(
                   label: t.t('field_common_name'),
-                  value: widget.result.displayName,
+                  value: content.displayName,
                 ),
                 _InfoRow(
                   label: t.t('field_scientific_name'),
-                  value: widget.result.scientificName,
+                  value: content.scientificName,
                 ),
                 _InfoRow(
                   label: t.t('field_family'),
-                  value: widget.result.family,
+                  value: content.family,
                 ),
-                _InfoRow(label: t.t('field_order'), value: widget.result.order),
-                _InfoRow(label: t.t('field_genus'), value: widget.result.genus),
+                _InfoRow(label: t.t('field_order'), value: content.order),
+                _InfoRow(label: t.t('field_genus'), value: content.genus),
                 _InfoRow(
                   label: t.t('field_species'),
-                  value: widget.result.species,
+                  value: content.species,
                 ),
               ],
             ),
@@ -121,7 +191,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           _sectionCard(
             title: t.t('field_description'),
             child: Text(
-              ScanResultScreen.valueOrPlaceholder(widget.result.description),
+              ScanResultScreen.valueOrPlaceholder(content.description),
               style: const TextStyle(height: 1.45),
             ),
           ),
@@ -129,7 +199,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           _sectionCard(
             title: t.t('field_uses'),
             child: Text(
-              ScanResultScreen.valueOrPlaceholder(widget.result.uses),
+              ScanResultScreen.valueOrPlaceholder(content.uses),
               style: const TextStyle(height: 1.45),
             ),
           ),
@@ -137,7 +207,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           _sectionCard(
             title: t.t('field_advantages'),
             child: Text(
-              ScanResultScreen.valueOrPlaceholder(widget.result.advantages),
+              ScanResultScreen.valueOrPlaceholder(content.advantages),
               style: const TextStyle(height: 1.45),
             ),
           ),
@@ -155,7 +225,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                       child: Stack(
                         children: [
                           _buildDistributionMap(
-                            points: widget.result.distributionPoints,
+                            points: content.distributionPoints,
                             initialZoom: 2.8,
                             onTap: () => _openExpandedMap(context),
                           ),
@@ -214,7 +284,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           _sectionCard(
             title: t.t('field_note'),
             child: Text(
-              ScanResultScreen.valueOrPlaceholder(widget.result.note),
+              ScanResultScreen.valueOrPlaceholder(content.note),
               style: const TextStyle(height: 1.35, color: AppColors.darkGrey),
             ),
           ),
@@ -360,20 +430,21 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       lines.add('$label: $trimmed.');
     }
 
-    addLine(t.t('field_common_name'), widget.result.displayName);
-    addLine(t.t('field_scientific_name'), widget.result.scientificName);
-    addLine(t.t('field_family'), widget.result.family);
-    addLine(t.t('field_order'), widget.result.order);
-    addLine(t.t('field_genus'), widget.result.genus);
-    addLine(t.t('field_species'), widget.result.species);
-    addLine(t.t('field_description'), widget.result.description);
-    addLine(t.t('field_uses'), widget.result.uses);
-    addLine(t.t('field_advantages'), widget.result.advantages);
+    final content = _contentResult;
+    addLine(t.t('field_common_name'), content.displayName);
+    addLine(t.t('field_scientific_name'), content.scientificName);
+    addLine(t.t('field_family'), content.family);
+    addLine(t.t('field_order'), content.order);
+    addLine(t.t('field_genus'), content.genus);
+    addLine(t.t('field_species'), content.species);
+    addLine(t.t('field_description'), content.description);
+    addLine(t.t('field_uses'), content.uses);
+    addLine(t.t('field_advantages'), content.advantages);
 
-    if (widget.result.distributionAreas.isNotEmpty) {
+    if (content.distributionAreas.isNotEmpty) {
       addLine(
         t.t('distribution_map'),
-        widget.result.distributionAreas.join(', '),
+        content.distributionAreas.join(', '),
       );
     }
 
@@ -521,6 +592,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
 
   Future<void> _openExpandedMap(BuildContext context) async {
     final t = AppLocalizations.of(context);
+    final content = _contentResult;
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => Scaffold(
@@ -530,7 +602,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
             foregroundColor: AppColors.white,
           ),
           body: _buildDistributionMap(
-            points: widget.result.distributionPoints,
+            points: content.distributionPoints,
             initialZoom: 4.0,
           ),
         ),
@@ -540,8 +612,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
 
   Future<void> _showDistributionDetails(BuildContext context) async {
     final t = AppLocalizations.of(context);
-    final pointItems = widget.result.distributionPoints;
-    final areaItems = widget.result.distributionAreas;
+    final content = _contentResult;
+    final pointItems = content.distributionPoints;
+    final areaItems = content.distributionAreas;
 
     await showModalBottomSheet<void>(
       context: context,

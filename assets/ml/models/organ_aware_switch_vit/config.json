@@ -1,0 +1,104 @@
+{
+  "model_id": "organ_aware_switch_vit",
+  "source": {
+    "backend_project": "D:/Homework/BackEnd/ModelDetectApi",
+    "source_onnx": "D:/Homework/BackEnd/ModelDetectApi/model/organ_aware_switch_vit/organ_aware_switch_vit.onnx",
+    "source_checkpoint": "D:/Homework/BackEnd/ModelDetectApi/model/organ_aware_switch_vit/best_model.pt"
+  },
+  "runtime": {
+    "format": "onnx",
+    "preprocess_mode": "imagenet_norm",
+    "image_scale": "to_float_0_1_then_normalize",
+    "input_layout": "NCHW",
+    "normalization": {
+      "mean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "std": [
+        0.229,
+        0.224,
+        0.225
+      ]
+    },
+    "topk_default": 5,
+    "two_pass_default": true,
+    "supports_camera_realtime": true
+  },
+  "io": {
+    "inputs": [
+      {
+        "name": "image",
+        "shape": [
+          "batch",
+          3,
+          224,
+          224
+        ],
+        "type": "tensor(float)"
+      },
+      {
+        "name": "organ_prior",
+        "shape": [
+          "batch",
+          5
+        ],
+        "type": "tensor(float)"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "logits",
+        "shape": [
+          "batch",
+          100
+        ],
+        "type": "tensor(float)"
+      },
+      {
+        "name": "aux_org",
+        "shape": [
+          "batch",
+          5
+        ],
+        "type": "tensor(float)"
+      }
+    ],
+    "num_classes": 100
+  },
+  "checkpoint_meta": {
+    "epoch": 2,
+    "organ_dim": 5,
+    "n_experts": 8,
+    "args": {
+      "data_root": "D:\\Homework\\NC\\dataset\\bigplantsDataset-resize",
+      "out_dir": "D:\\Homework\\NC\\TrainV2\\output",
+      "max_per_class": 100,
+      "batch_size": 16,
+      "epochs": 20,
+      "lr": 0.0002,
+      "val_split": 0.1,
+      "test_split": 0.2,
+      "num_workers": 4,
+      "n_org_clusters": 5,
+      "cluster_bs": 64,
+      "vit_name": "vit_base_patch16_224",
+      "n_experts": 8,
+      "d_ff_expert": 1024,
+      "top_k": 1,
+      "aux_weight": 0.5,
+      "balance_weight": 0.01,
+      "use_organmix": true,
+      "organmix_prob": 0.5,
+      "capacity_initial": 1.25,
+      "capacity_final": 1.0
+    }
+  },
+  "asset": {
+    "onnx_path": "assets/ml/models/organ_aware_switch_vit/model.onnx",
+    "labels_path": "assets/ml/models/organ_aware_switch_vit/labels.json",
+    "onnx_size_bytes": 369370418,
+    "onnx_sha256": "2302ff17c20ebd7f3e9a33b6751eb9f82c386185aa68afdfd3306c0216625d3c"
+  }
+}

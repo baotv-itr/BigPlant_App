@@ -1,0 +1,80 @@
+{
+  "model_id": "efficientnetv2_segformer",
+  "source": {
+    "backend_project": "D:/Homework/BackEnd/ModelDetectApi",
+    "source_onnx": "D:/Homework/BackEnd/ModelDetectApi/model/efficientnetv2-segformer/efficientnetv2-segformer.onnx",
+    "source_checkpoint": "D:/Homework/BackEnd/ModelDetectApi/model/efficientnetv2-segformer/efficientnetv2s-segformerb4.pt"
+  },
+  "runtime": {
+    "format": "onnx",
+    "preprocess_mode": "raw_01",
+    "image_scale": "to_float_0_1",
+    "input_layout": "NCHW",
+    "normalization": null,
+    "topk_default": 5,
+    "two_pass_default": false,
+    "supports_camera_realtime": true
+  },
+  "io": {
+    "inputs": [
+      {
+        "name": "image",
+        "shape": [
+          "batch",
+          3,
+          224,
+          224
+        ],
+        "type": "tensor(float)"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "logits",
+        "shape": [
+          "batch",
+          100
+        ],
+        "type": "tensor(float)"
+      }
+    ],
+    "num_classes": 100
+  },
+  "checkpoint_meta": {
+    "epoch": 38,
+    "organ_dim": null,
+    "n_experts": null,
+    "args": {
+      "data_root": "/home/bigplants/dataset/bigplants-100-resized-224x224",
+      "out_dir": "./outputs_efficientnetv2s-segformerb4_50epochs",
+      "epochs": 50,
+      "batch_size": 16,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "num_workers": 8,
+      "seed": 42,
+      "use_weighted_sampler": true,
+      "img_size": 224,
+      "per_class_cap": 100,
+      "parts_keep": "hand,leaf,flower,fruit",
+      "val_ratio": 0.1,
+      "test_ratio": 0.2,
+      "segformer_name": "nvidia/segformer-b4-finetuned-ade-512-512",
+      "seg_input_size": 512,
+      "seg_threshold": 0.45,
+      "seg_temperature": 12.0,
+      "min_keep_bg": 0.25,
+      "unfreeze_segformer": false,
+      "leak_hash_size": 8,
+      "leak_threshold": 5,
+      "max_leak_fix_iter": 3,
+      "patience": 10
+    }
+  },
+  "asset": {
+    "onnx_path": "assets/ml/models/efficientnetv2_segformer/model.onnx",
+    "labels_path": "assets/ml/models/efficientnetv2_segformer/labels.json",
+    "onnx_size_bytes": 81070320,
+    "onnx_sha256": "c6c9d9edf670e7614e4867e644ded1dc92cf4e46152649c8204bdc402b6d9e3f"
+  }
+}

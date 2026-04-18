@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "camera_scan": {
+    "mode": "onnx_local_realtime",
+    "allow_model_selection": true,
+    "default_model": "mobilenetv3large_segformer",
+    "storage_key_selected_model": "scan.local.selected_model"
+  },
+  "gallery_scan": {
+    "mode": "backend_api",
+    "endpoint": "api/plant_detect",
+    "query": {
+      "topk": 5,
+      "two_pass": true
+    }
+  },
+  "fallback": {
+    "on_local_failure": "backend_api",
+    "on_low_confidence": "backend_api",
+    "low_confidence_threshold": 0.6
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "model_id": "efficientnetv2_mask2former",
+  "source": {
+    "backend_project": "D:/Homework/BackEnd/ModelDetectApi",
+    "source_onnx": "D:/Homework/BackEnd/ModelDetectApi/model/efficientnetv2-mask2former/efficientnetv2-mask2former.onnx",
+    "source_checkpoint": "D:/Homework/BackEnd/ModelDetectApi/model/efficientnetv2-mask2former/efficientnetv2s-mask2former.pt"
+  },
+  "runtime": {
+    "format": "onnx",
+    "preprocess_mode": "raw_01",
+    "image_scale": "to_float_0_1",
+    "input_layout": "NCHW",
+    "normalization": null,
+    "topk_default": 5,
+    "two_pass_default": false,
+    "supports_camera_realtime": false
+  },
+  "io": {
+    "inputs": [
+      {
+        "name": "image",
+        "shape": [
+          "batch",
+          3,
+          224,
+          224
+        ],
+        "type": "tensor(float)"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "logits",
+        "shape": [
+          "batch",
+          100
+        ],
+        "type": "tensor(float)"
+      }
+    ],
+    "num_classes": 100
+  },
+  "checkpoint_meta": {
+    "epoch": 23,
+    "organ_dim": null,
+    "n_experts": null,
+    "args": {
+      "data_root": "/home/bigplants/dataset/bigplants-100-resized-224x224",
+      "out_dir": "./outputs_efficientnetv2s-mask2former-swin-small_blur",
+      "epochs": 50,
+      "batch_size": 32,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "num_workers": 8,
+      "seed": 42,
+      "img_size": 224,
+      "per_class_cap": 100,
+      "val_ratio": 0.1,
+      "test_ratio": 0.2,
+      "use_weighted_sampler": true,
+      "parts_keep": "hand,leaf,flower,fruit",
+      "use_mask2former": true,
+      "mask2former_model_id": "facebook/mask2former-swin-small-coco-panoptic",
+      "mask_score_threshold": 0.5,
+      "overwrite_mask_cache": true
+    }
+  },
+  "asset": {
+    "onnx_path": "assets/ml/models/efficientnetv2_mask2former/model.onnx",
+    "labels_path": "assets/ml/models/efficientnetv2_mask2former/labels.json",
+    "onnx_size_bytes": 81070320,
+    "onnx_sha256": "eb794e0f5a7877135d90485e42a502377360e549205726d5100a110cabaaf262"
+  }
+}

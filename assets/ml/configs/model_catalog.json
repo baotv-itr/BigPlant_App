@@ -1,0 +1,39 @@
+{
+  "default_model": "mobilenetv3large_segformer",
+  "camera_mode": "onnx_local_realtime",
+  "gallery_mode": "backend_api",
+  "models": {
+    "organ_aware_switch_vit": {
+      "display_name": "organ_aware_switch_vit",
+      "config_path": "assets/ml/models/organ_aware_switch_vit/config.json",
+      "labels_path": "assets/ml/models/organ_aware_switch_vit/labels.json",
+      "onnx_path": "assets/ml/models/organ_aware_switch_vit/model.onnx",
+      "supports_camera_realtime": true,
+      "num_classes": 100
+    },
+    "efficientnetv2_segformer": {
+      "display_name": "efficientnetv2_segformer",
+      "config_path": "assets/ml/models/efficientnetv2_segformer/config.json",
+      "labels_path": "assets/ml/models/efficientnetv2_segformer/labels.json",
+      "onnx_path": "assets/ml/models/efficientnetv2_segformer/model.onnx",
+      "supports_camera_realtime": true,
+      "num_classes": 100
+    },
+    "efficientnetv2_mask2former": {
+      "display_name": "efficientnetv2_mask2former",
+      "config_path": "assets/ml/models/efficientnetv2_mask2former/config.json",
+      "labels_path": "assets/ml/models/efficientnetv2_mask2former/labels.json",
+      "onnx_path": "assets/ml/models/efficientnetv2_mask2former/model.onnx",
+      "supports_camera_realtime": false,
+      "num_classes": 100
+    },
+    "mobilenetv3large_segformer": {
+      "display_name": "mobilenetv3large_segformer",
+      "config_path": "assets/ml/models/mobilenetv3large_segformer/config.json",
+      "labels_path": "assets/ml/models/mobilenetv3large_segformer/labels.json",
+      "onnx_path": "assets/ml/models/mobilenetv3large_segformer/model.onnx",
+      "supports_camera_realtime": true,
+      "num_classes": 100
+    }
+  }
+}
