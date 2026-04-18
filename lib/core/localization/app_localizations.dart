@@ -110,6 +110,11 @@ class AppLocalizations {
       'distribution_location': 'Location',
       'confidence': 'Confidence',
       'confidence_unknown': 'Confidence: Unknown',
+      'scan_camera_realtime_title': 'Realtime Camera Scan',
+      'scan_camera_init_failed': 'Unable to initialize camera.',
+      'scan_local_mode_badge': 'Local ONNX realtime mode',
+      'scan_realtime_waiting': 'Point camera to a plant...',
+      'scan_open_result': 'Open result details',
     },
     'vi': {
       'app_name': 'BigPlant',
@@ -213,6 +218,11 @@ class AppLocalizations {
       'distribution_location': 'Địa điểm',
       'confidence': 'Độ tin cậy',
       'confidence_unknown': 'Độ tin cậy: Chưa rõ',
+      'scan_camera_realtime_title': 'Quét camera thời gian thực',
+      'scan_camera_init_failed': 'Không thể khởi tạo camera.',
+      'scan_local_mode_badge': 'Chế độ ONNX cục bộ thời gian thực',
+      'scan_realtime_waiting': 'Đưa camera vào cây để nhận diện...',
+      'scan_open_result': 'Mở chi tiết kết quả',
     },
   };
 

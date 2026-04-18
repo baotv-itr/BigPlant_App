@@ -8,6 +8,7 @@ Dam bao kien truc va luong nghiep vu BigPlant ro rang, nhat quan, de mo rong.
 - Kiem tra boundaries giua module va API.
 - De xuat huong chia phase tu prototype -> production.
 - Cap nhat document context trong `.opencode/context/`.
+- Quan tri trade-off giua realtime local scan va app size/release strategy.
 
 ## Working rules
 - Uu tien doc source truoc khi ket luan.

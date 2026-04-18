@@ -8,6 +8,7 @@ Muc tieu folder nay:
 Cau truc:
 - `manifest.json`: khai bao agent, skill, file context.
 - `context/project_overview.md`: tong quan he thong BigPlant tu source hien tai.
+- `context/scan_onnx_runtime.md`: context chi tiet cho camera local ONNX + gallery backend.
 - `agents/*.md`: dinh nghia vai tro agent.
 - `skills/*.md`: playbook theo tung nghiep vu.
 

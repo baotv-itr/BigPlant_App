@@ -7,11 +7,14 @@
 ## Checklist
 - Xac nhan entrypoint, routing, feature modules.
 - Xac nhan user flow auth -> main shell.
-- Xac nhan API boundaries auth/shop vs scan.
+- Xac nhan API boundaries hien tai (baseUrl chung) va split scan flow.
 - Xac nhan trang thai hien tai (mock/prod-ready).
+- Xac nhan tinh trang ML local assets va policy camera/gallery.
 
 ## Output template
 - Scope
 - Current architecture
 - Main flows
+- Current API boundaries
+- Current ML boundaries
 - Risks and open points

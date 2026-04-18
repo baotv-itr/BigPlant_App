@@ -1,34 +1,58 @@
 # BigPlant Project Overview
 
 ## Product intent
-- BigPlant la app Flutter gom 2 gia tri chinh:
-  - E-commerce cho cay/chau.
-  - AI scan cay tu anh de nhan dien + hien thi thong tin va map phan bo.
+- BigPlant la app Flutter gom 2 huong gia tri:
+  - E-commerce cho cay/chau/phu kien.
+  - AI scan cay de nhan dien nhanh va hien thi thong tin cay.
 
-## Current architecture (from source)
-- Entry: `lib/main.dart` -> `lib/app.dart`.
-- Core modules: `lib/core`.
-- Feature modules:
+## Source architecture (current)
+- Entrypoint: `lib/main.dart` -> `lib/app.dart`.
+- Core layer: `lib/core` (routing, network, constants, localization).
+- Feature layer:
   - `lib/features/auth`
   - `lib/features/shop`
   - `lib/features/scan`
 
 ## Main user flow
-1. Splash kiem tra token -> hop le vao main shell, khong hop le vao login.
-2. Auth flow: login/register/verify otp/forgot/reset.
-3. Sau auth thanh cong vao shell 4 tab:
-   - Home
-   - Scan
-   - Cart
-   - Settings
+1. Splash kiem tra token trong local storage.
+2. Token hop le -> vao main shell; khong hop le -> auth flow.
+3. Main shell giu 4 tab: Home, Scan, Cart, Settings.
 
-## API boundaries
-- Auth/shop base URL: `ApiConstants.baseUrl`.
-- Scan base URL rieng: `ApiConstants.baseScanUrl`.
-- Scan API la multipart upload image, co fallback nhieu endpoint.
+## Scan architecture (latest)
+- Scan tab da tach 2 luong ro rang:
+  - Camera: ONNX local realtime (`camera` + `onnxruntime`).
+  - Gallery: giu logic upload backend multipart nhu truoc.
+- File chinh:
+  - `lib/features/shop/presentation/screens/scan_tab.dart`
+  - `lib/features/scan/presentation/screens/camera_realtime_scan_screen.dart`
+  - `lib/features/scan/domain/local_onnx_scan_service.dart`
+  - `lib/features/scan/data/scan_api.dart`
+
+## API boundary (current truth)
+- App hien tai chi dung `ApiConstants.baseUrl`, khong con base scan rieng.
+- Scan backend endpoint dang dung:
+  - `POST api/plant_detect?topk=5&two_pass=true`
+  - multipart field: `file`
+  - auth header: `Bearer <token>` neu co.
+
+## ML asset boundary
+- ONNX assets da duoc chuan hoa trong:
+  - `assets/ml/configs/`
+  - `assets/ml/models/<model_id>/`
+- Catalog + policy:
+  - `assets/ml/configs/model_catalog.json`
+  - `assets/ml/configs/runtime_policy.json`
+- Hien co 4 model:
+  - `organ_aware_switch_vit`
+  - `efficientnetv2_segformer`
+  - `efficientnetv2_mask2former`
+  - `mobilenetv3large_segformer` (default realtime)
 
 ## Current status notes
-- Home/Cart hien la mock data + UI first.
-- Scan da chay luong camera/gallery -> upload -> parse ket qua -> render map.
-- Localization co `vi/en`.
-- Database architecture da duoc bo sung tai `context/database_architecture.md`.
+- Localization `vi/en` dang duoc duy tri, scan da them key cho realtime screen.
+- `flutter analyze` va `flutter test` pass sau khi them ONNX + camera.
+- APK debug rat lon do bundle nhieu ONNX files (~600MB), can quan tri release strategy.
+
+## Operational caveats
+- Tren Windows + Android build co the gap Kotlin incremental cache issue voi plugin `camera_android_camerax` (C: pub cache vs D: project root).
+- Tren emulator de cai APK can du data partition; neu sat nguong se fail install du build thanh cong.

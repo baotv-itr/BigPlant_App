@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../scan/domain/scan_service.dart';
+import '../../../scan/presentation/screens/camera_realtime_scan_screen.dart';
 import '../../../scan/presentation/screens/scan_result_screen.dart';
 
 class ScanTab extends StatefulWidget {
@@ -22,11 +23,11 @@ class _ScanTabState extends State<ScanTab> {
   Uint8List? _previewBytes;
   bool _loading = false;
 
-  Future<void> _pickAndScan(ImageSource source) async {
+  Future<void> _pickAndScanFromGallery() async {
     if (_loading) return;
 
     final file = await _imagePicker.pickImage(
-      source: source,
+      source: ImageSource.gallery,
       imageQuality: 92,
       maxWidth: 1800,
       maxHeight: 1800,
@@ -60,6 +61,12 @@ class _ScanTabState extends State<ScanTab> {
         setState(() => _loading = false);
       }
     }
+  }
+
+  Future<void> _openRealtimeCamera() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const CameraRealtimeScanScreen()),
+    );
   }
 
   @override
@@ -140,7 +147,7 @@ class _ScanTabState extends State<ScanTab> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _loading ? null : () => _pickAndScan(ImageSource.camera),
+                  onPressed: _loading ? null : _openRealtimeCamera,
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.leafGreen),
                     foregroundColor: AppColors.leafGreenDark,
@@ -153,7 +160,7 @@ class _ScanTabState extends State<ScanTab> {
               const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: _loading ? null : () => _pickAndScan(ImageSource.gallery),
+                  onPressed: _loading ? null : _pickAndScanFromGallery,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.leafGreen,
                     foregroundColor: AppColors.white,

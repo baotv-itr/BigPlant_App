@@ -4,6 +4,7 @@ class StorageService {
   static const _tokenKey = 'token';
   static const _userIdKey = 'user_id';
   static const _languageKey = 'language_code';
+  static const _scanLocalModelKey = 'scan.local.selected_model';
 
   static Future<void> saveAuth({
     required String token,
@@ -38,5 +39,15 @@ class StorageService {
   static Future<String?> getLanguageCode() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_languageKey);
+  }
+
+  static Future<void> setScanLocalModel(String modelId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_scanLocalModelKey, modelId);
+  }
+
+  static Future<String?> getScanLocalModel() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_scanLocalModelKey);
   }
 }

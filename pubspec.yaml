@@ -35,6 +35,9 @@ dependencies:
   http: ^1.2.2
   shared_preferences: ^2.3.2
   image_picker: ^1.1.2
+  camera: ^0.11.0+2
+  image: ^4.2.0
+  onnxruntime: ^1.4.1
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   flutter_tts: ^4.2.3
@@ -65,10 +68,21 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/ml/configs/model_catalog.json
+    - assets/ml/configs/runtime_policy.json
+    - assets/ml/models/organ_aware_switch_vit/model.onnx
+    - assets/ml/models/organ_aware_switch_vit/config.json
+    - assets/ml/models/organ_aware_switch_vit/labels.json
+    - assets/ml/models/efficientnetv2_segformer/model.onnx
+    - assets/ml/models/efficientnetv2_segformer/config.json
+    - assets/ml/models/efficientnetv2_segformer/labels.json
+    - assets/ml/models/efficientnetv2_mask2former/model.onnx
+    - assets/ml/models/efficientnetv2_mask2former/config.json
+    - assets/ml/models/efficientnetv2_mask2former/labels.json
+    - assets/ml/models/mobilenetv3large_segformer/model.onnx
+    - assets/ml/models/mobilenetv3large_segformer/config.json
+    - assets/ml/models/mobilenetv3large_segformer/labels.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
