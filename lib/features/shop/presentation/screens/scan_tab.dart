@@ -48,7 +48,11 @@ class _ScanTabState extends State<ScanTab> {
 
       await Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ScanResultScreen(imageBytes: bytes, result: result),
+          builder: (_) => ScanResultScreen(
+            imageBytes: bytes,
+            result: result,
+            inferenceFramework: 'TensorRT',
+          ),
         ),
       );
     } catch (e) {

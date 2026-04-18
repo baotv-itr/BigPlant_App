@@ -329,6 +329,7 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
               result: result,
               fetchDetailsFromApi: true,
               detailFetchFileName: detailFetchFileName,
+              inferenceFramework: 'Onnx Runtime',
             ),
           ),
         )

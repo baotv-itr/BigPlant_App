@@ -15,6 +15,7 @@ class ScanResultScreen extends StatefulWidget {
     required this.result,
     this.fetchDetailsFromApi = false,
     this.detailFetchFileName = 'camera_scan.jpg',
+    this.inferenceFramework,
     super.key,
   });
 
@@ -22,6 +23,7 @@ class ScanResultScreen extends StatefulWidget {
   final PlantScanResult result;
   final bool fetchDetailsFromApi;
   final String detailFetchFileName;
+  final String? inferenceFramework;
 
   static String valueOrPlaceholder(String value) {
     final text = value.trim();
@@ -52,6 +54,12 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   }
 
   PlantScanResult get _contentResult => _fetchedDetails ?? widget.result;
+
+  String get _frameworkLabel {
+    final explicit = widget.inferenceFramework?.trim() ?? '';
+    if (explicit.isNotEmpty) return explicit;
+    return widget.fetchDetailsFromApi ? 'Onnx Runtime' : 'TensorRT';
+  }
 
   Future<void> _fetchDetailsFromApi() async {
     setState(() {
@@ -490,13 +498,12 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  ScanResultScreen.valueOrPlaceholder(
-                    widget.result.scientificName,
-                  ),
+                  'by $_frameworkLabel',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontStyle: FontStyle.italic,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.darkGrey,
                   ),
                 ),
