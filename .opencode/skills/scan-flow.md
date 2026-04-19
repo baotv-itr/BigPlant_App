@@ -11,8 +11,12 @@ Scan tab + scan result voi split flow:
 - Entry button tai `ScanTab` mo `CameraRealtimeScanScreen`.
 - Frame streaming tu `camera` plugin.
 - Inference local qua `LocalOnnxScanService`.
+- Frame convert ho tro `yuv420` / `bgra8888` / `nv21`.
+- Tensor input phai la float32 (`Float32List`) de khop ONNX `tensor(float)`.
 - Model duoc chon tu catalog + persist qua `scan.local.selected_model`.
 - Ket qua realtime hien top-1 confidence; mo chi tiet qua `ScanResultScreen`.
+- Khi bam `Open result details`: tam dung quet realtime, vao details, back lai thi quet tiep.
+- Trong `ScanResultScreen` (vao tu camera), app goi API de lay thong tin chi tiet va do vao body; header van giu ket qua local.
 
 ### Gallery flow
 - Dung `image_picker` lay anh.
@@ -33,6 +37,8 @@ Scan tab + scan result voi split flow:
 ## Must-have checks
 - Camera stream khong crash khi doi model hoac rotate camera.
 - Local inference fail phai hien error an toan, khong treo UI.
+- Khi dang o `ScanResultScreen`, camera realtime khong tiep tuc infer nen.
+- Back tu `ScanResultScreen` ve camera thi realtime infer phai resume.
 - Gallery upload fail phai tra thong diep ro rang.
 - Parse response khong crash khi field thieu/sai type.
 - `ScanResultScreen` van render du placeholders neu data rong.

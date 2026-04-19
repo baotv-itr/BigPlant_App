@@ -12,11 +12,18 @@ Tai lieu nay la source-of-truth cho scan architecture sau khi chuyen sang huong:
 - Service: `lib/features/scan/domain/local_onnx_scan_service.dart`
 - Pipeline:
   1. Khoi tao camera stream.
-  2. Convert frame (`yuv420`/`bgra8888`) -> RGB image.
+  2. Convert frame (`yuv420`/`bgra8888`/`nv21`) -> RGB image.
   3. Preprocess theo model config (size, normalize/raw).
-  4. Chay ONNX inference local.
-  5. Softmax + top-k -> hien thi realtime.
-  6. Mo `ScanResultScreen` voi ket qua local khi user can chi tiet.
+  4. Tao tensor float32 (khong dung double).
+  5. Chay ONNX inference local bang `session.run`.
+  6. Softmax + top-k -> hien thi realtime.
+  7. Mo `ScanResultScreen` voi ket qua local khi user can chi tiet.
+- Realtime control:
+  - Vao `ScanResultScreen` tu camera se tam dung infer realtime.
+  - Back tu details ve camera se bat lai infer realtime.
+- Detail enrichment:
+  - Trong `ScanResultScreen` (flow camera), app goi backend scan API 1 lan de lay chi tiet thong tin cay.
+  - Header tren result giu ket qua local (ten + confidence + framework), body du lieu uu tien tu API.
 
 ### Gallery (backend)
 - UI trigger: `ScanTab` trong `lib/features/shop/presentation/screens/scan_tab.dart`

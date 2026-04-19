@@ -14,11 +14,14 @@ Dong bo va tich hop API cho auth/shop/scan.
 - Content type: multipart/form-data
 - File field: `file`
 - Auth header: `Authorization: Bearer <token>` neu token ton tai.
-- Camera realtime local khong goi API scan (tru khi bo sung fallback logic sau nay).
+- Gallery flow goi API scan truc tiep.
+- Camera realtime local khong goi API trong luc dang stream frame.
+- Khi user vao `Open result details` tu camera realtime, app goi API scan 1 lan de enrich du lieu details.
 
 ## Validation checklist
 - Success status handling.
 - Non-2xx handling + user-facing error.
 - Mapping JSON an toan (null/type mismatch).
 - Token header duoc gan dung luc.
-- Gallery scan van call API dung contract, camera khong call API ngoai y muon.
+- Gallery scan van call API dung contract.
+- Camera realtime chi call API o buoc details enrichment, khong call khi stream frame.

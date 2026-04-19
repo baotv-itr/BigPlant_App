@@ -1,7 +1,7 @@
 {
   "name": "BigPlant OpenCode Config",
   "version": "1.1.0",
-  "updated_at": "2026-04-11",
+  "updated_at": "2026-04-19",
   "context": [
     "context/project_overview.md",
     "context/database_architecture.md",

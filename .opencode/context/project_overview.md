@@ -22,6 +22,10 @@
 - Scan tab da tach 2 luong ro rang:
   - Camera: ONNX local realtime (`camera` + `onnxruntime`).
   - Gallery: giu logic upload backend multipart nhu truoc.
+- Realtime camera khi vao `Open result details` se:
+  - Tam dung infer realtime.
+  - Goi backend scan API 1 lan de lay thong tin chi tiet cho result body.
+  - Back ve camera thi infer realtime duoc bat lai.
 - File chinh:
   - `lib/features/shop/presentation/screens/scan_tab.dart`
   - `lib/features/scan/presentation/screens/camera_realtime_scan_screen.dart`
@@ -52,7 +56,9 @@
 - Localization `vi/en` dang duoc duy tri, scan da them key cho realtime screen.
 - `flutter analyze` va `flutter test` pass sau khi them ONNX + camera.
 - APK debug rat lon do bundle nhieu ONNX files (~600MB), can quan tri release strategy.
+- ONNX realtime da chot yeu cau tensor float32; neu dua tensor double se fail voi loi `Unexpected input data type`.
 
 ## Operational caveats
 - Tren Windows + Android build co the gap Kotlin incremental cache issue voi plugin `camera_android_camerax` (C: pub cache vs D: project root).
 - Tren emulator de cai APK can du data partition; neu sat nguong se fail install du build thanh cong.
+- `10.0.2.2` chi dung cho Android emulator. Khi test may that qua USB, can dung `adb reverse` + base URL `127.0.0.1` neu goi backend local.
