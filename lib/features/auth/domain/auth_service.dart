@@ -91,6 +91,8 @@ class AuthService {
       return false;
     } on ApiException {
       return false;
+    } catch (_) {
+      return false;
     }
   }
 }

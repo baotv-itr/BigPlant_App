@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -8,10 +10,24 @@ class ApiClient {
     Map<String, String>? headers,
     Duration timeout = const Duration(seconds: 6),
   }) async {
-    final response = await http
-        .get(Uri.parse(url), headers: headers)
-        .timeout(timeout);
-    return _decodeResponse(response);
+    try {
+      final response = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(timeout);
+      return _decodeResponse(response);
+    } on TimeoutException {
+      throw ApiException(
+        message: 'Request timed out after ${timeout.inSeconds}s',
+        statusCode: 408,
+      );
+    } on SocketException {
+      throw ApiException(
+        message: 'Network unreachable. Check server and adb reverse mapping.',
+        statusCode: 503,
+      );
+    } on http.ClientException catch (e) {
+      throw ApiException(message: 'HTTP client error: $e', statusCode: 500);
+    }
   }
 
   Future<Map<String, dynamic>> post(
@@ -21,10 +37,24 @@ class ApiClient {
     Duration timeout = const Duration(seconds: 8),
   }) async {
     final mergedHeaders = {'Content-Type': 'application/json', ...?headers};
-    final response = await http
-        .post(Uri.parse(url), headers: mergedHeaders, body: jsonEncode(body))
-        .timeout(timeout);
-    return _decodeResponse(response);
+    try {
+      final response = await http
+          .post(Uri.parse(url), headers: mergedHeaders, body: jsonEncode(body))
+          .timeout(timeout);
+      return _decodeResponse(response);
+    } on TimeoutException {
+      throw ApiException(
+        message: 'Request timed out after ${timeout.inSeconds}s',
+        statusCode: 408,
+      );
+    } on SocketException {
+      throw ApiException(
+        message: 'Network unreachable. Check server and adb reverse mapping.',
+        statusCode: 503,
+      );
+    } on http.ClientException catch (e) {
+      throw ApiException(message: 'HTTP client error: $e', statusCode: 500);
+    }
   }
 
   Map<String, dynamic> _decodeResponse(http.Response response) {

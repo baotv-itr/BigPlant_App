@@ -63,6 +63,27 @@ class LocalOnnxScanService {
     return model.labels;
   }
 
+  Future<void> preloadModel(String modelId) async {
+    await _loadModel(modelId);
+  }
+
+  bool isModelLoaded(String modelId) {
+    return _loadedModels.containsKey(modelId);
+  }
+
+  void evictModel(String modelId) {
+    final loaded = _loadedModels.remove(modelId);
+    loaded?.session.release();
+  }
+
+  void clearLoadedModels() {
+    final loadedModels = _loadedModels.values.toList();
+    _loadedModels.clear();
+    for (final loaded in loadedModels) {
+      loaded.session.release();
+    }
+  }
+
   Future<LocalInferenceResult> inferJpegBytes(
     Uint8List jpegBytes, {
     String? modelId,
@@ -190,7 +211,10 @@ class LocalOnnxScanService {
     final sessionOptions = OrtSessionOptions();
     sessionOptions.setInterOpNumThreads(1);
     sessionOptions.setIntraOpNumThreads(1);
-    final modelBuffer = modelBytes.buffer.asUint8List();
+    final modelBuffer = modelBytes.buffer.asUint8List(
+      modelBytes.offsetInBytes,
+      modelBytes.lengthInBytes,
+    );
     final session = OrtSession.fromBuffer(modelBuffer, sessionOptions);
     sessionOptions.release();
 

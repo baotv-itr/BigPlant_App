@@ -10,6 +10,7 @@
 .history
 .svn/
 .swiftpm/
+.secrets
 migrate_working_dir/
 
 # IntelliJ related
