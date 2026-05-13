@@ -7,6 +7,23 @@ class AuthService {
 
   final AuthApi _authApi;
 
+  Future<void> _persistAuthResponse(Map<String, dynamic> response) async {
+    final token = response['token']?.toString() ?? '';
+    final userId = response['user_id']?.toString() ?? '';
+    if (token.isNotEmpty && userId.isNotEmpty) {
+      await StorageService.saveAuth(token: token, userId: userId);
+    }
+
+    final user = response['user'];
+    if (user is Map) {
+      await StorageService.saveUserProfile(
+        userName: user['user_name']?.toString(),
+        fullName: user['full_name']?.toString(),
+        email: user['email']?.toString(),
+      );
+    }
+  }
+
   Future<void> login({
     required String username,
     required String password,
@@ -15,11 +32,7 @@ class AuthService {
       username: username,
       password: password,
     );
-    final token = response['token']?.toString() ?? '';
-    final userId = response['user_id']?.toString() ?? '';
-    if (token.isNotEmpty && userId.isNotEmpty) {
-      await StorageService.saveAuth(token: token, userId: userId);
-    }
+    await _persistAuthResponse(response);
   }
 
   Future<void> register({
@@ -34,11 +47,7 @@ class AuthService {
       phone: phone,
       password: password,
     );
-    final token = response['token']?.toString() ?? '';
-    final userId = response['user_id']?.toString() ?? '';
-    if (token.isNotEmpty && userId.isNotEmpty) {
-      await StorageService.saveAuth(token: token, userId: userId);
-    }
+    await _persistAuthResponse(response);
   }
 
   Future<void> verifyRegisterOtp({required String email, required String otp}) {
@@ -67,11 +76,7 @@ class AuthService {
       otp: otp,
       newPassword: newPassword,
     );
-    final token = response['token']?.toString() ?? '';
-    final userId = response['user_id']?.toString() ?? '';
-    if (token.isNotEmpty && userId.isNotEmpty) {
-      await StorageService.saveAuth(token: token, userId: userId);
-    }
+    await _persistAuthResponse(response);
   }
 
   Future<bool> verifyExistingToken() async {
@@ -85,6 +90,14 @@ class AuthService {
         final userId = response['user_id']?.toString() ?? '';
         if (userId.isNotEmpty) {
           await StorageService.saveAuth(token: token, userId: userId);
+        }
+        final user = response['user'];
+        if (user is Map) {
+          await StorageService.saveUserProfile(
+            userName: user['user_name']?.toString(),
+            fullName: user['full_name']?.toString(),
+            email: user['email']?.toString(),
+          );
         }
         return true;
       }

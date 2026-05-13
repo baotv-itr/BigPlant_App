@@ -15,6 +15,27 @@ class SettingsTab extends StatefulWidget {
 class _SettingsTabState extends State<SettingsTab> {
   bool _notifyDeals = true;
   bool _plantCareTips = true;
+  String _displayName = 'User';
+  String _displayEmail = '-';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final fullName = (await StorageService.getFullName())?.trim() ?? '';
+    final userName = (await StorageService.getUserName())?.trim() ?? '';
+    final email = (await StorageService.getEmail())?.trim() ?? '';
+    if (!mounted) return;
+    setState(() {
+      _displayName = fullName.isNotEmpty
+          ? fullName
+          : (userName.isNotEmpty ? userName : 'User');
+      _displayEmail = email.isNotEmpty ? email : '-';
+    });
+  }
 
   Future<void> _logout(BuildContext context) async {
     await StorageService.clearAuth();
@@ -43,34 +64,34 @@ class _SettingsTabState extends State<SettingsTab> {
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: AppColors.cardBorder),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 26,
                   backgroundColor: AppColors.leafMint,
                   child: Icon(Icons.person_rounded, color: AppColors.leafGreen),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Bao Tran',
-                        style: TextStyle(
+                        _displayName,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'tranvubao2004@gmail.com',
-                        style: TextStyle(color: AppColors.darkGrey),
+                        _displayEmail,
+                        style: const TextStyle(color: AppColors.darkGrey),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: AppColors.darkGrey),
+                const Icon(Icons.chevron_right_rounded, color: AppColors.darkGrey),
               ],
             ),
           ),
