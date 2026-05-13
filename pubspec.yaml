@@ -41,6 +41,7 @@ dependencies:
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   flutter_tts: ^4.2.3
+  google_fonts: ^6.2.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -69,6 +70,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/branding/florascan_logo.png
     - assets/ml/configs/model_catalog.json
     - assets/ml/configs/runtime_policy.json
     - assets/ml/models/organ_aware_switch_vit/model.onnx

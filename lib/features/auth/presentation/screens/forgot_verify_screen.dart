@@ -68,89 +68,96 @@ class _ForgotVerifyScreenState extends State<ForgotVerifyScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    return AuthLayout(
-      header: t.t('forgot_password_page'),
-      showBack: true,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 26),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.email_outlined,
-              color: AppColors.mainColorPurple,
-              size: 120,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              t.t('verify_email'),
-              style: const TextStyle(
-                color: AppColors.mainColorPurple,
-                fontSize: 34,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              t.t('verify_desc'),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.darkGrey, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.email,
-              style: const TextStyle(
-                color: AppColors.mainColorPurpleDark,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: 220,
-              child: TextField(
-                controller: _otpCtrl,
-                keyboardType: TextInputType.number,
-                maxLength: 4,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 28, letterSpacing: 8),
-                decoration: const InputDecoration(
-                  counterText: '',
-                  hintText: '0000',
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: 220,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _verify,
-                child: _loading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.white,
-                        ),
-                      )
-                    : Text(t.t('next')),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return AuthScaffold(
+      includeDecorations: false,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 40, 24, 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(t.t('didnt_get_email')),
-                TextButton(onPressed: _resend, child: Text(t.t('resend'))),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: AuthBackButton(size: 40),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  t.t('auth_forgot_otp_title'),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppColors.onSurface,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  t.t('auth_forgot_otp_desc'),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.email,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 40),
+                AuthOtpInput(
+                  controller: _otpCtrl,
+                  hasError: _error != null,
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.error_rounded,
+                        color: AppColors.error,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _error!,
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: AppColors.error,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const Spacer(),
+                AuthPrimaryButton(
+                  label: t.t('verify_email'),
+                  loading: _loading,
+                  onPressed: _verify,
+                ),
+                const SizedBox(height: 24),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      '${t.t('didnt_get_email')} ',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                    ),
+                    TextButton(
+                      onPressed: _resend,
+                      child: Text(t.t('resend')),
+                    ),
+                  ],
+                ),
               ],
             ),
-            if (_error != null)
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.red),
-              ),
-          ],
+          ),
         ),
       ),
     );

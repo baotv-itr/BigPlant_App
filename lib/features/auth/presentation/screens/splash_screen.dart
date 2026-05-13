@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/routing/app_router.dart';
 import '../../domain/auth_service.dart';
+import '../widgets/auth_layout.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -37,45 +38,129 @@ class _SplashScreenState extends State<SplashScreen> {
     final t = AppLocalizations.of(context);
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF9F62E2), AppColors.mainColorPurpleDark],
+            colors: [
+              AppColors.surface,
+              AppColors.secondaryContainer.withValues(alpha: 0.3),
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.eco_rounded, color: AppColors.white, size: 130),
-                const SizedBox(height: 16),
-                Text(
-                  t.t('app_name'),
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 45,
-                    fontWeight: FontWeight.w800,
-                  ),
+          child: Stack(
+            children: [
+              const _SplashBlob(
+                alignment: Alignment(-1.15, -1.1),
+                color: Color(0x33BEEAD1),
+                size: 320,
+              ),
+              const _SplashBlob(
+                alignment: Alignment(1.2, 1.1),
+                color: Color(0x26B1F0CE),
+                size: 380,
+              ),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 150,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primary.withValues(alpha: 0.05),
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    AppColors.primary.withValues(alpha: 0.08),
+                                blurRadius: 32,
+                                spreadRadius: 8,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const AuthLogoMark(size: 112),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      t.t('app_name'),
+                      textAlign: TextAlign.center,
+                      style:
+                          Theme.of(context).textTheme.displayLarge?.copyWith(
+                                color: AppColors.primary,
+                              ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Grow your plant life beautifully',
-                  style: TextStyle(color: AppColors.white, fontSize: 18),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 48,
+                child: Column(
+                  children: [
+                    const SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 4,
+                        color: AppColors.primary,
+                        backgroundColor: AppColors.secondaryContainer,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      t.t('auth_loading'),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: AppColors.primary.withValues(alpha: 0.7),
+                            letterSpacing: 1.4,
+                          ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 52),
-                const SizedBox(
-                  width: 54,
-                  height: 54,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 5,
-                    color: AppColors.loading,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SplashBlob extends StatelessWidget {
+  const _SplashBlob({
+    required this.alignment,
+    required this.color,
+    required this.size,
+  });
+
+  final Alignment alignment;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: alignment,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color,
+          boxShadow: [
+            BoxShadow(
+              color: color,
+              blurRadius: 90,
+              spreadRadius: 20,
+            ),
+          ],
         ),
       ),
     );

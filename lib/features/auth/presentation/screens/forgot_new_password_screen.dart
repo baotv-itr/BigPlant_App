@@ -87,70 +87,94 @@ class _ForgotNewPasswordScreenState extends State<ForgotNewPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    return AuthLayout(
-      header: t.t('forgot_password_page'),
-      showBack: true,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.lock_reset,
-              color: AppColors.mainColorPurple,
-              size: 120,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              t.t('create_new_pass'),
-              style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              t.t('enter_new_pass'),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.darkGrey),
-            ),
-            const SizedBox(height: 28),
-            AuthInput(
-              controller: _passwordCtrl,
-              hint: t.t('password_hint'),
-              icon: Icons.lock,
-              obscureText: true,
-            ),
-            const SizedBox(height: 18),
-            AuthInput(
-              controller: _rePasswordCtrl,
-              hint: t.t('re_password_hint'),
-              icon: Icons.lock_reset,
-              obscureText: true,
-            ),
-            const SizedBox(height: 22),
-            SizedBox(
-              width: 220,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _submit,
-                child: _loading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.white,
-                        ),
-                      )
-                    : Text(t.t('next')),
-              ),
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: AppColors.red),
+    return AuthScaffold(
+      child: Column(
+        children: [
+          Container(
+            color: AppColors.surface.withValues(alpha: 0.8),
+            child: const AuthTopBar(showBack: true),
+          ),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 512),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        t.t('auth_new_password_title'),
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        t.t('auth_new_password_desc'),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 40),
+                      AuthInput(
+                        controller: _passwordCtrl,
+                        label: t.t('auth_new_password_label'),
+                        hint: t.t('auth_new_password_hint'),
+                        icon: Icons.lock_outline_rounded,
+                        obscureText: true,
+                        fillColor: AppColors.surfaceBright,
+                        borderRadius: 16,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.info_outline_rounded,
+                            size: 16,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              t.t('auth_password_rule'),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      AuthInput(
+                        controller: _rePasswordCtrl,
+                        label: t.t('auth_confirm_new_password_label'),
+                        hint: t.t('auth_confirm_new_password_hint'),
+                        icon: Icons.lock_outline_rounded,
+                        obscureText: true,
+                        fillColor: AppColors.surfaceBright,
+                        borderRadius: 16,
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 18),
+                        AuthErrorBanner(message: _error!),
+                      ],
+                      const Spacer(),
+                      AuthPrimaryButton(
+                        label: t.t('auth_save_password'),
+                        loading: _loading,
+                        icon: Icons.check_rounded,
+                        onPressed: _submit,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

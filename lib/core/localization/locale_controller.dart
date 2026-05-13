@@ -4,7 +4,7 @@ import '../../features/auth/data/storage_service.dart';
 import '../constants/app_globals.dart';
 
 class LocaleController extends ChangeNotifier {
-  Locale _locale = const Locale('en');
+  Locale _locale = const Locale('vi');
 
   Locale get locale => _locale;
 

@@ -113,98 +113,154 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
 
-    return AuthLayout(
-      header: t.t('register_page'),
-      showBack: true,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-        child: Column(
-          children: [
-            appLogo(),
-            const SizedBox(height: 22),
-            AuthInput(
-              controller: _usernameCtrl,
-              hint: t.t('register_username_hint'),
-              icon: Icons.person,
-            ),
-            const SizedBox(height: 16),
-            AuthInput(
-              controller: _emailCtrl,
-              hint: t.t('email_hint'),
-              icon: Icons.email,
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            AuthInput(
-              controller: _phoneCtrl,
-              hint: t.t('phone_hint'),
-              icon: Icons.phone,
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 16),
-            AuthInput(
-              controller: _passwordCtrl,
-              hint: t.t('password_hint'),
-              icon: Icons.lock,
-              obscureText: true,
-            ),
-            const SizedBox(height: 16),
-            AuthInput(
-              controller: _rePasswordCtrl,
-              hint: t.t('re_password_hint'),
-              icon: Icons.lock_reset,
-              obscureText: true,
-            ),
-            const SizedBox(height: 12),
-            CheckboxListTile(
-              value: _agreed,
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              onChanged: (v) => setState(() => _agreed = v ?? false),
-              title: Text(
-                t.t('register_terms'),
-                style: const TextStyle(fontSize: 14, color: AppColors.darkGrey),
-              ),
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: 220,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _register,
-                child: _loading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.white,
+    return AuthScaffold(
+      child: Column(
+        children: [
+          const AuthTopBar(showBack: true, backFilled: true),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 40),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 432),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.t('auth_register_title'),
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        t.t('auth_register_subtitle'),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 32),
+                      AuthCard(
+                        shadowOpacity: 0.04,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            AuthInput(
+                              controller: _usernameCtrl,
+                              label: 'Username',
+                              hint: t.t('register_username_hint'),
+                              icon: Icons.person_outline_rounded,
+                            ),
+                            const SizedBox(height: 20),
+                            AuthInput(
+                              controller: _emailCtrl,
+                              label: 'Email',
+                              hint: t.t('email_hint'),
+                              icon: Icons.mail_outline_rounded,
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                            const SizedBox(height: 20),
+                            AuthInput(
+                              controller: _phoneCtrl,
+                              label:
+                                  '${t.t('auth_phone_label')} (${t.t('auth_phone_optional')})',
+                              hint: t.t('phone_hint'),
+                              icon: Icons.phone_iphone_rounded,
+                              keyboardType: TextInputType.phone,
+                            ),
+                            const SizedBox(height: 20),
+                            AuthInput(
+                              controller: _passwordCtrl,
+                              label: 'Password',
+                              hint: t.t('password_hint'),
+                              icon: Icons.lock_outline_rounded,
+                              obscureText: true,
+                            ),
+                            const SizedBox(height: 20),
+                            AuthInput(
+                              controller: _rePasswordCtrl,
+                              label: t.t('auth_confirm_password_label'),
+                              hint: t.t('re_password_hint'),
+                              icon: Icons.lock_outline_rounded,
+                              obscureText: true,
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: Checkbox(
+                                    value: _agreed,
+                                    activeColor: AppColors.primary,
+                                    side: const BorderSide(
+                                      color: AppColors.outlineVariant,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    onChanged: (value) => setState(
+                                      () => _agreed = value ?? false,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    t.t('register_terms'),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: AppColors.onSurfaceVariant,
+                                          fontSize: 14,
+                                        ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_error != null) ...[
+                              const SizedBox(height: 18),
+                              AuthErrorBanner(message: _error!),
+                            ],
+                            const SizedBox(height: 24),
+                            AuthPrimaryButton(
+                              label: t.t('register'),
+                              loading: _loading,
+                              icon: Icons.arrow_forward_rounded,
+                              radius: 12,
+                              onPressed: _register,
+                            ),
+                            const SizedBox(height: 18),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  '${t.t('have_account')} ',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: AppColors.onSurfaceVariant,
+                                        fontSize: 14,
+                                      ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: Text(t.t('login')),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      )
-                    : Text(t.t('register')),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(t.t('have_account')),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(t.t('login')),
-                ),
-              ],
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.red),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

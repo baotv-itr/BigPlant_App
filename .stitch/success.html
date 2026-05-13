@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FloraScan - Thành công</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&amp;family=Playfair+Display:ital,wght@0,600;0,700;1,600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary": "#3f6653",
+                      "on-primary": "#ffffff",
+                      "primary-fixed": "#b1f0ce",
+                      "on-secondary": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "primary": "#0f5238",
+                      "outline-variant": "#bfc9c1",
+                      "secondary-container": "#beead1",
+                      "on-tertiary-fixed-variant": "#354c3b",
+                      "on-background": "#191c1c",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed": "#c1ecd4",
+                      "surface-container-low": "#f2f4f3",
+                      "inverse-surface": "#2e3131",
+                      "on-secondary-container": "#436b58",
+                      "on-primary-fixed": "#002114",
+                      "inverse-on-surface": "#eff1f0",
+                      "surface-bright": "#f8faf9",
+                      "on-secondary-fixed": "#002114",
+                      "surface-dim": "#d8dada",
+                      "error": "#ba1a1a",
+                      "surface": "#f8faf9",
+                      "on-primary-container": "#a8e7c5",
+                      "surface-container-highest": "#e1e3e2",
+                      "tertiary": "#364d3c",
+                      "tertiary-fixed": "#cee9d3",
+                      "outline": "#707973",
+                      "primary-fixed-dim": "#95d4b3",
+                      "on-error": "#ffffff",
+                      "on-primary-fixed-variant": "#0e5138",
+                      "secondary-fixed-dim": "#a5d0b9",
+                      "tertiary-container": "#4d6553",
+                      "background": "#f8faf9",
+                      "surface-variant": "#e1e3e2",
+                      "on-tertiary-fixed": "#092012",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed-dim": "#b3cdb7",
+                      "on-tertiary-container": "#c6e1ca",
+                      "primary-container": "#2d6a4f",
+                      "surface-container": "#eceeed",
+                      "inverse-primary": "#95d4b3",
+                      "on-secondary-fixed-variant": "#274e3d",
+                      "surface-tint": "#2c694e",
+                      "on-surface": "#191c1c",
+                      "on-surface-variant": "#404943",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-high": "#e6e9e8"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "section-gap": "40px",
+                      "base": "8px",
+                      "container-margin": "24px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "label-md": [
+                              "Be Vietnam Pro"
+                      ],
+                      "display-lg": [
+                              "Playfair Display"
+                      ],
+                      "body-md": [
+                              "Be Vietnam Pro"
+                      ],
+                      "headline-md": [
+                              "Playfair Display"
+                      ],
+                      "headline-lg-mobile": [
+                              "Playfair Display"
+                      ],
+                      "headline-lg": [
+                              "Playfair Display"
+                      ],
+                      "body-lg": [
+                              "Be Vietnam Pro"
+                      ],
+                      "label-sm": [
+                              "Be Vietnam Pro"
+                      ]
+              },
+              "fontSize": {
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body-md text-on-surface antialiased overflow-hidden min-h-screen relative flex items-center justify-center">
+<!-- Decorative Organic Background Elements -->
+<div class="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-primary-fixed/40 blur-[80px] pointer-events-none"></div>
+<div class="absolute bottom-[-10%] left-[-10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] rounded-full bg-secondary-container/30 blur-[100px] pointer-events-none"></div>
+<main class="relative z-10 flex flex-col items-center justify-center px-container-margin w-full max-w-md mx-auto text-center">
+<!-- Stylized Checkmark Icon -->
+<div class="relative flex items-center justify-center w-32 h-32 rounded-full bg-surface shadow-[0px_12px_32px_rgba(15,82,56,0.08)] mb-8">
+<div class="absolute inset-2 rounded-full bg-primary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-[72px] text-primary" data-icon="check_circle">check_circle</span>
+</div>
+<!-- Leaf Motif Decoration -->
+<div class="absolute -bottom-2 -right-2 flex items-center justify-center w-12 h-12 rounded-full bg-surface shadow-[0px_4px_12px_rgba(15,82,56,0.1)]">
+<span class="material-symbols-outlined text-[28px] text-secondary" data-icon="energy_savings_leaf">energy_savings_leaf</span>
+</div>
+</div>
+<!-- Typography -->
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary mb-4">
+            Thành công!
+        </h1>
+<p class="font-body-md text-body-md text-on-surface-variant mb-12 max-w-[300px] mx-auto leading-relaxed">
+            Mật khẩu của bạn đã được cập nhật thành công. Bây giờ bạn có thể đăng nhập.
+        </p>
+<!-- Primary Button -->
+<button class="w-full py-4 px-6 rounded-lg bg-primary text-on-primary font-label-md text-label-md shadow-[0px_8px_20px_rgba(15,82,56,0.25)] hover:bg-on-primary-fixed-variant transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary-fixed focus:ring-offset-2 focus:ring-offset-surface">
+            Quay lại Đăng nhập
+        </button>
+</main>
+</body></html>

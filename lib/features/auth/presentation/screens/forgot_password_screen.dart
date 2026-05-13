@@ -59,63 +59,68 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    return AuthLayout(
-      header: t.t('forgot_password_page'),
-      showBack: true,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.help_outline,
-              color: AppColors.mainColorPurple,
-              size: 128,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              t.t('forgot_password_page'),
-              style: const TextStyle(fontSize: 35, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              t.t('reset_desc'),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.darkGrey),
-            ),
-            const SizedBox(height: 26),
-            AuthInput(
-              controller: _emailCtrl,
-              hint: t.t('email_hint'),
-              icon: Icons.email,
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 22),
-            SizedBox(
-              width: 220,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _submit,
-                child: _loading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.white,
+    return AuthScaffold(
+      child: Column(
+        children: [
+          AuthTopBar(
+            showBack: true,
+            title: t.t('forgot_password_page'),
+          ),
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 432),
+                  child: AuthCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          t.t('auth_forgot_desc'),
+                          textAlign: TextAlign.center,
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
                         ),
-                      )
-                    : Text(t.t('next')),
-              ),
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: AppColors.red),
+                        const SizedBox(height: 32),
+                        AuthInput(
+                          controller: _emailCtrl,
+                          label: 'Email',
+                          hint: 'Ví dụ: name@example.com',
+                          icon: Icons.mail_outline_rounded,
+                          keyboardType: TextInputType.emailAddress,
+                          fillColor: AppColors.surfaceBright,
+                        ),
+                        if (_error != null) ...[
+                          const SizedBox(height: 18),
+                          AuthErrorBanner(message: _error!),
+                        ],
+                        const SizedBox(height: 28),
+                        AuthPrimaryButton(
+                          label: t.t('auth_continue'),
+                          loading: _loading,
+                          icon: Icons.arrow_forward_rounded,
+                          onPressed: _submit,
+                        ),
+                        const SizedBox(height: 28),
+                        TextButton.icon(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.keyboard_return_rounded),
+                          label: Text(t.t('auth_return_login')),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
