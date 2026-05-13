@@ -1,4 +1,4 @@
-# bigplantflutter
+# BigPlant Flutter App
 
 A new Flutter project.
 
