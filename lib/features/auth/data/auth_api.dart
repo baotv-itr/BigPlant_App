@@ -40,6 +40,13 @@ class AuthApi {
     );
   }
 
+  Future<Map<String, dynamic>> logout(String token) {
+    return _client.get(
+      '${ApiConstants.baseUrl}api/auth/logout',
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
   Future<Map<String, dynamic>> resendRegisterOtp(String email) {
     return _client.post(
       '${ApiConstants.baseUrl}api/email_verification/',

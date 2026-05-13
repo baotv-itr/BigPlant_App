@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/routing/app_router.dart';
+import '../../../auth/domain/auth_service.dart';
 import '../../../auth/data/storage_service.dart';
 
 class SettingsTab extends StatefulWidget {
@@ -13,10 +14,12 @@ class SettingsTab extends StatefulWidget {
 }
 
 class _SettingsTabState extends State<SettingsTab> {
+  final AuthService _authService = AuthService();
   bool _notifyDeals = true;
   bool _plantCareTips = true;
   String _displayName = 'User';
   String _displayEmail = '-';
+  bool _loggingOut = false;
 
   @override
   void initState() {
@@ -38,7 +41,9 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 
   Future<void> _logout(BuildContext context) async {
-    await StorageService.clearAuth();
+    if (_loggingOut) return;
+    setState(() => _loggingOut = true);
+    await _authService.logout();
     if (!context.mounted) return;
     Navigator.of(
       context,
@@ -130,14 +135,20 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
           const SizedBox(height: 14),
           OutlinedButton.icon(
-            onPressed: () => _logout(context),
+            onPressed: _loggingOut ? null : () => _logout(context),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.soil,
               side: const BorderSide(color: AppColors.cardBorder),
               minimumSize: const Size(double.infinity, 48),
             ),
             icon: const Icon(Icons.logout_rounded),
-            label: Text(t.t('logout')),
+            label: _loggingOut
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(t.t('logout')),
           ),
         ],
       ),

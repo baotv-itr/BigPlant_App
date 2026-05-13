@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../../../core/auth/auth_session_manager.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../auth/data/storage_service.dart';
@@ -38,6 +39,10 @@ class ScanApi {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return _decode(response.body);
+      }
+
+      if (response.statusCode == 401) {
+        await AuthSessionManager.handleUnauthorized();
       }
 
       throw ApiException(

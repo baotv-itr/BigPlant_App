@@ -79,9 +79,24 @@ class AuthService {
     await _persistAuthResponse(response);
   }
 
+  Future<void> logout({bool notifyServer = true}) async {
+    final token = await StorageService.getToken();
+    if (notifyServer && token != null && token.isNotEmpty) {
+      try {
+        await _authApi.logout(token);
+      } on ApiException {
+        // Keep local logout behavior even if server logout fails.
+      } catch (_) {
+        // Keep local logout behavior even if server logout fails.
+      }
+    }
+    await StorageService.clearAuth();
+  }
+
   Future<bool> verifyExistingToken() async {
     final token = await StorageService.getToken();
     if (token == null || token.isEmpty || token == 'null') {
+      await StorageService.clearAuth();
       return false;
     }
     try {
@@ -101,10 +116,13 @@ class AuthService {
         }
         return true;
       }
+      await StorageService.clearAuth();
       return false;
     } on ApiException {
+      await StorageService.clearAuth();
       return false;
     } catch (_) {
+      await StorageService.clearAuth();
       return false;
     }
   }

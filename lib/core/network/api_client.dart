@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import '../auth/auth_session_manager.dart';
+
 class ApiClient {
   Future<Map<String, dynamic>> get(
     String url, {
@@ -14,7 +16,7 @@ class ApiClient {
       final response = await http
           .get(Uri.parse(url), headers: headers)
           .timeout(timeout);
-      return _decodeResponse(response);
+      return await _decodeResponse(response);
     } on TimeoutException {
       throw ApiException(
         message: 'Request timed out after ${timeout.inSeconds}s',
@@ -41,7 +43,7 @@ class ApiClient {
       final response = await http
           .post(Uri.parse(url), headers: mergedHeaders, body: jsonEncode(body))
           .timeout(timeout);
-      return _decodeResponse(response);
+      return await _decodeResponse(response);
     } on TimeoutException {
       throw ApiException(
         message: 'Request timed out after ${timeout.inSeconds}s',
@@ -57,7 +59,7 @@ class ApiClient {
     }
   }
 
-  Map<String, dynamic> _decodeResponse(http.Response response) {
+  Future<Map<String, dynamic>> _decodeResponse(http.Response response) async {
     Map<String, dynamic> body;
     try {
       body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -67,6 +69,10 @@ class ApiClient {
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;
+    }
+
+    if (response.statusCode == 401) {
+      await AuthSessionManager.handleUnauthorized();
     }
 
     final message = body['msg']?.toString() ?? 'Request failed';

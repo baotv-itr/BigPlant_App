@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'core/auth/auth_session_manager.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/localization/locale_controller.dart';
 import 'core/routing/app_router.dart';
@@ -30,6 +31,7 @@ class _BigPlantAppState extends State<BigPlantApp> {
         return LocaleScope(
           controller: _localeController,
             child: MaterialApp(
+              navigatorKey: AuthSessionManager.navigatorKey,
               debugShowCheckedModeBanner: false,
               title: 'BigPlant',
             theme: AppTheme.light(),
