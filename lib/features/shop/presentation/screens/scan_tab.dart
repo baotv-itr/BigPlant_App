@@ -51,7 +51,7 @@ class _ScanTabState extends State<ScanTab> {
           builder: (_) => ScanResultScreen(
             imageBytes: bytes,
             result: result,
-            inferenceFramework: 'TensorRT',
+            inferenceFramework: 'FloraEngine v1.0',
           ),
         ),
       );
@@ -75,336 +75,339 @@ class _ScanTabState extends State<ScanTab> {
 
   @override
   Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final t = AppLocalizations.of(context);
 
-    return Container(
+    return DecoratedBox(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFF2FBF6), Color(0xFFF9FCFA)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          colors: [AppColors.surface, Color(0x14BEEAD1)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 120),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 120),
           children: [
-            Text(
-              t.t('scan_title'),
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: AppColors.blackLight,
+            RichText(
+              text: TextSpan(
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: AppColors.primary,
+                ),
+                children: [
+                  TextSpan(text: t.t('scan_intro_title_line_1')),
+                  TextSpan(
+                    text: '\n${t.t('scan_intro_title_line_2')}',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: AppColors.secondary,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              t.t('scan_subtitle'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.darkGrey,
-              ),
+            const SizedBox(height: 28),
+            _PreviewCard(
+              previewBytes: _previewBytes,
+              idleMessage: t.t('scan_camera_hint'),
             ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _signalChip(
-                  label: t.t('scan_fast_analysis'),
-                  icon: Icons.bolt_rounded,
+            const SizedBox(height: 24),
+            _ActionButton(
+              label: t.t('scan_primary_action'),
+              icon: Icons.photo_camera,
+              filled: true,
+              onPressed: _loading ? null : _openRealtimeCamera,
+            ),
+            const SizedBox(height: 16),
+            _ActionButton(
+              label: t.t('scan_secondary_action'),
+              icon: Icons.photo_library,
+              filled: false,
+              onPressed: _loading ? null : _pickAndScanFromGallery,
+            ),
+            if (_loading) ...[
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: const LinearProgressIndicator(
+                  minHeight: 6,
+                  color: AppColors.primary,
+                  backgroundColor: AppColors.primaryFixed,
                 ),
-                _signalChip(
-                  label: t.t('scan_topk_badge'),
-                  icon: Icons.analytics_rounded,
+              ),
+            ],
+            const SizedBox(height: 40),
+            _TipsCard(
+              title: t.t('scan_tips_title'),
+              items: [
+                _TipItem(
+                  icon: Icons.wb_sunny,
+                  title: t.t('scan_tip_light_title'),
+                  body: t.t('scan_tip_light_body'),
                 ),
-                _signalChip(
-                  label: t.t('scan_natural_light_badge'),
-                  icon: Icons.wb_sunny_outlined,
+                _TipItem(
+                  icon: Icons.filter_center_focus,
+                  title: t.t('scan_tip_focus_title'),
+                  body: t.t('scan_tip_focus_body'),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
-            _scanCard(context, t),
-            const SizedBox(height: 16),
-            _tipsCard(context, t),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _scanCard(BuildContext context, AppLocalizations t) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            height: 256,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: const LinearGradient(
-                colors: [Color(0xFFF1FBF5), Color(0xFFF7FBF9)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(color: AppColors.cardBorder),
+class _PreviewCard extends StatelessWidget {
+  const _PreviewCard({required this.previewBytes, required this.idleMessage});
+
+  final Uint8List? previewBytes;
+  final String idleMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 3 / 4,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (_previewBytes != null)
-                    Image.memory(_previewBytes!, fit: BoxFit.cover)
-                  else
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 82,
-                            height: 82,
-                            decoration: BoxDecoration(
-                              color: AppColors.white.withValues(alpha: 0.92),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(alpha: 0.08),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 12),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.center_focus_strong_rounded,
-                              size: 34,
-                              color: AppColors.leafGreen,
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
-                            t.t('scan_preview_title'),
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontSize: 22,
-                              color: AppColors.blackLight,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            t.t('scan_preview_subtitle'),
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.darkGrey,
-                            ),
-                          ),
-                        ],
-                      ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (previewBytes != null)
+                Image.memory(previewBytes!, fit: BoxFit.cover)
+              else ...[
+                Positioned(
+                  top: -48,
+                  right: -48,
+                  child: Container(
+                    width: 192,
+                    height: 192,
+                    decoration: const BoxDecoration(
+                      color: Color(0x4DB1F0CE),
+                      shape: BoxShape.circle,
                     ),
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    top: 16,
-                    child: Row(
+                  ),
+                ),
+                Positioned(
+                  left: -64,
+                  bottom: -64,
+                  child: Container(
+                    width: 224,
+                    height: 224,
+                    decoration: const BoxDecoration(
+                      color: Color(0x40BEEAD1),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                _ViewfinderFrame(),
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 7,
-                          ),
+                          width: 80,
+                          height: 80,
                           decoration: BoxDecoration(
-                            color: AppColors.white.withValues(alpha: 0.88),
-                            borderRadius: BorderRadius.circular(999),
+                            color: AppColors.surfaceContainer,
+                            shape: BoxShape.circle,
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.auto_awesome_rounded,
-                                size: 16,
-                                color: AppColors.leafGreenDark,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                _previewBytes == null
-                                    ? t.t('scan_fast_analysis')
-                                    : t.t('scan_latest_capture'),
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: AppColors.leafGreenDark,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
+                          child: const Icon(
+                            Icons.energy_savings_leaf,
+                            color: AppColors.primary,
+                            size: 40,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          idleMessage,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    bottom: 16,
+                ),
+              ],
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  height: 4,
+                  color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.33,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Text(
-                        _previewBytes == null
-                            ? t.t('scan_empty_state')
-                            : t.t('scan_preview_subtitle'),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.white,
-                          height: 1.35,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.primaryFixed, AppColors.primary],
+                        ),
+                        borderRadius: BorderRadius.horizontal(
+                          right: Radius.circular(999),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _featurePill(
-                context,
-                icon: Icons.speed_rounded,
-                label: t.t('scan_fast_analysis'),
-              ),
-              _featurePill(
-                context,
-                icon: Icons.track_changes_rounded,
-                label: t.t('scan_topk_badge'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _loading ? null : _openRealtimeCamera,
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: AppColors.surface,
-                    side: const BorderSide(color: AppColors.leafGreen),
-                    foregroundColor: AppColors.leafGreenDark,
-                    minimumSize: const Size(0, 54),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                  icon: const Icon(Icons.camera_alt_rounded),
-                  label: Text(t.t('scan_camera')),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _loading ? null : _pickAndScanFromGallery,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.leafGreen,
-                    foregroundColor: AppColors.white,
-                    minimumSize: const Size(0, 54),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    elevation: 0,
-                  ),
-                  icon: const Icon(Icons.photo_library_rounded),
-                  label: Text(t.t('scan_gallery')),
                 ),
               ),
             ],
           ),
-          if (_loading) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2.2),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          t.t('scan_scanning_progress_title'),
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: AppColors.blackLight,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: const LinearProgressIndicator(
-                      minHeight: 6,
-                      color: AppColors.leafGreen,
-                      backgroundColor: AppColors.leafMint,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    t.t('scan_scanning_progress_body'),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.darkGrey,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
+}
 
-  Widget _tipsCard(BuildContext context, AppLocalizations t) {
-    final theme = Theme.of(context);
+class _ViewfinderFrame extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                _CornerMarker(top: true, left: true),
+                _CornerMarker(top: true, left: false),
+              ],
+            ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                _CornerMarker(top: false, left: true),
+                _CornerMarker(top: false, left: false),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CornerMarker extends StatelessWidget {
+  const _CornerMarker({required this.top, required this.left});
+
+  final bool top;
+  final bool left;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
-        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: top && left ? const Radius.circular(12) : Radius.zero,
+          topRight: top && !left ? const Radius.circular(12) : Radius.zero,
+          bottomLeft: !top && left ? const Radius.circular(12) : Radius.zero,
+          bottomRight: !top && !left ? const Radius.circular(12) : Radius.zero,
+        ),
+        border: Border(
+          top: top ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
+          left: left ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
+          right: !left ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
+          bottom: !top ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.filled,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool filled;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = filled
+        ? ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.onPrimary,
+            minimumSize: const Size.fromHeight(56),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            shadowColor: AppColors.primary.withValues(alpha: 0.15),
+          )
+        : OutlinedButton.styleFrom(
+            backgroundColor: AppColors.surfaceContainerLowest,
+            foregroundColor: AppColors.primary,
+            minimumSize: const Size.fromHeight(56),
+            side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          );
+
+    final child = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon),
+        const SizedBox(width: 12),
+        Text(label),
+      ],
+    );
+
+    return filled
+        ? ElevatedButton(onPressed: onPressed, style: style, child: child)
+        : OutlinedButton(onPressed: onPressed, style: style, child: child);
+  }
+}
+
+class _TipsCard extends StatelessWidget {
+  const _TipsCard({required this.title, required this.items});
+
+  final String title;
+  final List<_TipItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.05),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -413,141 +416,86 @@ class _ScanTabState extends State<ScanTab> {
         children: [
           Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.leafGreenSoft,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.tips_and_updates_rounded,
-                  color: AppColors.leafGreenDark,
-                ),
-              ),
-              const SizedBox(width: 12),
+              const Icon(Icons.tips_and_updates, color: AppColors.secondary),
+              const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      t.t('scan_tips_title'),
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: AppColors.leafGreenDark,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      t.t('scan_natural_light_badge'),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.darkGrey,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontSize: 24,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          _tipRow(context, index: 1, message: t.t('scan_tip_1')),
-          const SizedBox(height: 10),
-          _tipRow(context, index: 2, message: t.t('scan_tip_2')),
-          const SizedBox(height: 10),
-          _tipRow(context, index: 3, message: t.t('scan_tip_3')),
+          const SizedBox(height: 20),
+          for (var i = 0; i < items.length; i++) ...[
+            _TipRow(item: items[i]),
+            if (i != items.length - 1) const SizedBox(height: 20),
+          ],
         ],
       ),
     );
   }
+}
 
-  Widget _signalChip({required String label, required IconData icon}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: AppColors.leafGreenDark),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.leafGreenDark,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+class _TipRow extends StatelessWidget {
+  const _TipRow({required this.item});
 
-  Widget _featurePill(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.leafGreenSoft,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: AppColors.leafGreenDark),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.leafGreenDark,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  final _TipItem item;
 
-  Widget _tipRow(
-    BuildContext context, {
-    required int index,
-    required String message,
-  }) {
+  @override
+  Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(999),
+            color: AppColors.secondaryContainer.withValues(alpha: 0.5),
+            shape: BoxShape.circle,
           ),
-          child: Text(
-            '$index',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.leafGreenDark,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          child: Icon(item.icon, color: AppColors.primary, size: 20),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 16),
         Expanded(
-          child: Text(
-            message,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.blackLight,
-              height: 1.4,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.title,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppColors.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item.body,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: 14,
+                  height: 1.45,
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
+}
+
+class _TipItem {
+  const _TipItem({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
 }

@@ -28,8 +28,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
     ];
 
     final navItems = [
-      _NavItemData(icon: Icons.home_rounded, label: t.t('home_tab')),
-      _NavItemData(icon: Icons.qr_code_scanner_rounded, label: t.t('scan_tab')),
+      _NavItemData(icon: Icons.potted_plant, label: t.t('home_tab')),
+      _NavItemData(icon: Icons.center_focus_strong, label: t.t('scan_tab')),
       _NavItemData(icon: Icons.shopping_bag_rounded, label: t.t('cart_tab')),
       _NavItemData(icon: Icons.settings_rounded, label: t.t('settings_tab')),
     ];
@@ -38,17 +38,16 @@ class _MainShellScreenState extends State<MainShellScreen> {
       backgroundColor: const Color(0xFFF4F7F4),
       body: IndexedStack(index: _currentIndex, children: tabs),
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        top: false,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
           decoration: BoxDecoration(
             color: AppColors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x1A13331F),
-                blurRadius: 24,
-                offset: Offset(0, 10),
+                color: AppColors.primary.withValues(alpha: 0.04),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
               ),
             ],
           ),
@@ -57,16 +56,16 @@ class _MainShellScreenState extends State<MainShellScreen> {
               final selected = index == _currentIndex;
               return Expanded(
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(999),
                   onTap: () => setState(() => _currentIndex = index),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 220),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
                       color: selected
-                          ? AppColors.leafGreenSoft
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
+                           ? AppColors.leafGreenSoft
+                           : Colors.transparent,
+                      borderRadius: BorderRadius.circular(999),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -75,10 +74,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
                           navItems[index].icon,
                           size: 24,
                           color: selected
-                              ? AppColors.leafGreenDark
-                              : AppColors.darkGrey,
+                               ? AppColors.leafGreenDark
+                                : AppColors.darkGrey,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           navItems[index].label,
                           style: TextStyle(

@@ -2,54 +2,86 @@ class PlantScanResult {
   PlantScanResult({
     required this.displayName,
     required this.scientificName,
+    required this.scientificNameSearch,
+    required this.commonName,
     required this.family,
     required this.order,
     required this.genus,
     required this.species,
+    required this.taxonomicStatus,
     required this.uses,
     required this.advantages,
     required this.description,
+    required this.toxicityWarning,
+    required this.safetyNotes,
+    required this.evidenceLevel,
+    required this.source,
     required this.note,
     required this.distributionAreas,
     required this.distributionPoints,
     this.confidence,
-    this.aliases = '',
-    this.habitat = '',
-    this.morphology = '',
-    this.characteristics = '',
-    this.lightRequirement = '',
-    this.waterRequirement = '',
-    this.soilPreference = '',
-    this.toxicity = '',
-    this.growthHabit = '',
-    this.seasonality = '',
-    this.sourceQuality = '',
   });
 
   final String displayName;
   final String scientificName;
+  final String scientificNameSearch;
+  final String commonName;
   final String family;
   final String order;
   final String genus;
   final String species;
+  final String taxonomicStatus;
   final String uses;
   final String advantages;
   final String description;
+  final String toxicityWarning;
+  final String safetyNotes;
+  final String evidenceLevel;
+  final String source;
   final String note;
   final List<String> distributionAreas;
   final List<PlantDistributionPoint> distributionPoints;
   final double? confidence;
-  final String aliases;
-  final String habitat;
-  final String morphology;
-  final String characteristics;
-  final String lightRequirement;
-  final String waterRequirement;
-  final String soilPreference;
-  final String toxicity;
-  final String growthHabit;
-  final String seasonality;
-  final String sourceQuality;
+
+  List<String> get sourceTokens => source
+      .split(',')
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty)
+      .toList(growable: false);
+
+  String sourceForField(String fieldKey) {
+    final tokens = sourceTokens;
+    if (tokens.isEmpty) return '';
+
+    final orderedFields = <MapEntry<String, String>>[
+      MapEntry('scientific_name', scientificName),
+      MapEntry('scientific_name_search', scientificNameSearch),
+      MapEntry('common_name', commonName),
+      MapEntry('family', family),
+      MapEntry('taxonomic_order', order),
+      MapEntry('genus', genus),
+      MapEntry('species', species),
+      MapEntry('taxonomic_status', taxonomicStatus),
+      MapEntry('uses', uses),
+      MapEntry('advantages', advantages),
+      MapEntry('description', description),
+      MapEntry('toxicity_warning', toxicityWarning),
+      MapEntry('safety_notes', safetyNotes),
+      MapEntry('evidence_level', evidenceLevel),
+    ];
+
+    var tokenIndex = 0;
+    for (final entry in orderedFields) {
+      if (entry.value.trim().isEmpty) continue;
+      if (tokenIndex >= tokens.length) break;
+      if (entry.key == fieldKey) {
+        return tokens[tokenIndex];
+      }
+      tokenIndex++;
+    }
+
+    return '';
+  }
 
   factory PlantScanResult.fromApi(Map<String, dynamic> json) {
     final payload = _toMap(
@@ -90,14 +122,21 @@ class PlantScanResult {
     return PlantScanResult(
       displayName: _stringOrEmpty(
         _pickValue(source, const [
+          'common_name',
           'name',
           'label',
           'plant_name',
-          'common_name',
+          'scientific_name',
         ]),
       ),
       scientificName: _stringOrEmpty(
-        _pickValue(source, const ['scientific_name', 'binomial_name']),
+        _pickValue(source, const ['scientific_name', 'binomial_name', 'name']),
+      ),
+      scientificNameSearch: _stringOrEmpty(
+        _pickValue(source, const ['scientific_name_search', 'name_search']),
+      ),
+      commonName: _stringOrEmpty(
+        _pickValue(source, const ['common_name', 'plant_name', 'label']),
       ),
       family: _stringOrEmpty(_pickValue(source, const ['family', 'ho'])),
       order: _stringOrEmpty(
@@ -105,6 +144,9 @@ class PlantScanResult {
       ),
       genus: _stringOrEmpty(_pickValue(source, const ['genus', 'chi'])),
       species: _stringOrEmpty(_pickValue(source, const ['species', 'loai'])),
+      taxonomicStatus: _stringOrEmpty(
+        _pickValue(source, const ['taxonomic_status', 'status']),
+      ),
       uses: _stringOrEmpty(
         _pickValue(source, const ['uses', 'utility', 'cong_dung']),
       ),
@@ -123,95 +165,16 @@ class PlantScanResult {
       confidence: _asDouble(
         _pickValue(source, const ['confidence', 'score', 'probability']),
       ),
-      aliases: _stringOrEmpty(
-        _pickValue(source, const [
-          'aliases',
-          'alias',
-          'synonyms',
-          'other_names',
-          'ten_khac',
-        ]),
+      toxicityWarning: _stringOrEmpty(
+        _pickValue(source, const ['toxicity_warning', 'toxicity_warning_text']),
       ),
-      habitat: _stringOrEmpty(
-        _pickValue(source, const [
-          'habitat',
-          'environment',
-          'native_habitat',
-          'moi_truong_song',
-        ]),
+      safetyNotes: _stringOrEmpty(
+        _pickValue(source, const ['safety_notes', 'safety_note']),
       ),
-      morphology: _stringOrEmpty(
-        _pickValue(source, const [
-          'morphology',
-          'appearance',
-          'plant_form',
-          'dac_diem_hinh_thai',
-        ]),
+      evidenceLevel: _stringOrEmpty(
+        _pickValue(source, const ['evidence_level', 'evidence']),
       ),
-      characteristics: _stringOrEmpty(
-        _pickValue(source, const [
-          'characteristics',
-          'traits',
-          'features',
-          'dac_diem',
-        ]),
-      ),
-      lightRequirement: _stringOrEmpty(
-        _pickValue(source, const [
-          'light',
-          'light_requirement',
-          'sunlight',
-          'anh_sang',
-        ]),
-      ),
-      waterRequirement: _stringOrEmpty(
-        _pickValue(source, const [
-          'water',
-          'water_requirement',
-          'watering',
-          'nuoc',
-        ]),
-      ),
-      soilPreference: _stringOrEmpty(
-        _pickValue(source, const [
-          'soil',
-          'soil_preference',
-          'soil_type',
-          'dat_trong',
-        ]),
-      ),
-      toxicity: _stringOrEmpty(
-        _pickValue(source, const [
-          'toxicity',
-          'toxicity_level',
-          'pet_safety',
-          'doc_tinh',
-        ]),
-      ),
-      growthHabit: _stringOrEmpty(
-        _pickValue(source, const [
-          'growth_habit',
-          'growth',
-          'habit',
-          'dang_sinh_truong',
-        ]),
-      ),
-      seasonality: _stringOrEmpty(
-        _pickValue(source, const [
-          'seasonality',
-          'season',
-          'blooming_season',
-          'mua_vu',
-        ]),
-      ),
-      sourceQuality: _stringOrEmpty(
-        _pickValue(source, const [
-          'source_quality',
-          'data_quality',
-          'reference_quality',
-          'do_tin_cay',
-        ]),
-      ),
+      source: _stringOrEmpty(_pickValue(source, const ['source'])),
       note: _stringOrEmpty(noteRaw),
       distributionAreas: areas,
       distributionPoints: points,

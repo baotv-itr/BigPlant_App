@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -6,8 +8,8 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
-import '../../domain/scan_service.dart';
 import '../../domain/models/plant_scan_result.dart';
+import '../../domain/scan_service.dart';
 
 class ScanResultScreen extends StatefulWidget {
   const ScanResultScreen({
@@ -41,6 +43,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   bool _isSpeaking = false;
   bool _ttsReady = false;
   bool _fetchingDetails = false;
+  bool _technicalExpanded = false;
   String? _fetchError;
   PlantScanResult? _fetchedDetails;
 
@@ -53,12 +56,18 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _tts.stop();
+    super.dispose();
+  }
+
   PlantScanResult get _contentResult => _fetchedDetails ?? widget.result;
 
   String get _frameworkLabel {
     final explicit = widget.inferenceFramework?.trim() ?? '';
     if (explicit.isNotEmpty) return explicit;
-    return widget.fetchDetailsFromApi ? 'Onnx Runtime' : 'TensorRT';
+    return widget.fetchDetailsFromApi ? 'FloraEngine v1.0' : 'FloraEngine v1.0';
   }
 
   Future<void> _fetchDetailsFromApi() async {
@@ -115,444 +124,6 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _tts.stop();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
-    final content = _contentResult;
-    final identityRows = <MapEntry<String, String>>[
-      MapEntry(t.t('field_common_name'), content.displayName),
-      MapEntry(t.t('field_scientific_name'), content.scientificName),
-      MapEntry(t.t('field_family'), content.family),
-      MapEntry(t.t('field_order'), content.order),
-      MapEntry(t.t('field_genus'), content.genus),
-      MapEntry(t.t('field_species'), content.species),
-    ];
-    final profileRows = _detailRows([
-      MapEntry(t.t('field_aliases'), content.aliases),
-      MapEntry(t.t('field_habitat'), content.habitat),
-      MapEntry(t.t('field_morphology'), content.morphology),
-      MapEntry(t.t('field_characteristics'), content.characteristics),
-    ]);
-    final careRows = _detailRows([
-      MapEntry(t.t('field_light'), content.lightRequirement),
-      MapEntry(t.t('field_water'), content.waterRequirement),
-      MapEntry(t.t('field_soil'), content.soilPreference),
-      MapEntry(t.t('field_toxicity'), content.toxicity),
-      MapEntry(t.t('field_growth_habit'), content.growthHabit),
-      MapEntry(t.t('field_seasonality'), content.seasonality),
-      MapEntry(t.t('field_source_quality'), content.sourceQuality),
-    ]);
-    final overviewTags = _buildOverviewTags(context, t, content);
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF3F8F4),
-      appBar: AppBar(
-        title: Text(t.t('scan_result_title')),
-        backgroundColor: AppColors.leafGreen,
-        foregroundColor: AppColors.white,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-        children: [
-          _imageHeader(context, t, content),
-          const SizedBox(height: 14),
-          if (_fetchingDetails)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: LinearProgressIndicator(
-                minHeight: 4,
-                borderRadius: BorderRadius.circular(99),
-                color: AppColors.leafGreen,
-                backgroundColor: AppColors.leafMint,
-              ),
-            ),
-          if (_fetchError != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3E0),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFFD8A8)),
-                ),
-                child: Text(
-                  _fetchError!,
-                    style: const TextStyle(color: Color(0xFF8A4B00)),
-                  ),
-                ),
-              ),
-          if (overviewTags.isNotEmpty) ...[
-            _sectionCard(
-              title: t.t('scan_result_overview'),
-              child: Wrap(spacing: 8, runSpacing: 8, children: overviewTags),
-            ),
-            const SizedBox(height: 12),
-          ],
-          _sectionCard(
-            title: t.t('plant_identity'),
-            child: Column(
-              children: identityRows
-                  .map((row) => _InfoRow(label: row.key, value: row.value))
-                  .toList(),
-            ),
-          ),
-          if (profileRows.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _sectionCard(
-              title: t.t('plant_profile'),
-              child: Column(
-                children: profileRows
-                    .map((row) => _InfoRow(label: row.key, value: row.value))
-                    .toList(),
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          _sectionCard(
-            title: t.t('field_description'),
-            child: _buildNarrativeText(content.description),
-          ),
-          const SizedBox(height: 12),
-          _sectionCard(
-            title: t.t('field_uses'),
-            child: _buildNarrativeText(content.uses),
-          ),
-          const SizedBox(height: 12),
-          _sectionCard(
-            title: t.t('field_advantages'),
-            child: _buildNarrativeText(content.advantages),
-          ),
-          if (careRows.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _sectionCard(
-              title: t.t('care_requirements'),
-              child: Column(
-                children: careRows
-                    .map((row) => _InfoRow(label: row.key, value: row.value))
-                    .toList(),
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          _buildDistributionSection(context, t, content),
-          const SizedBox(height: 12),
-          _sectionCard(
-            title: t.t('field_note'),
-            child: SelectableText(
-              ScanResultScreen.valueOrPlaceholder(content.note),
-              style: const TextStyle(height: 1.45, color: AppColors.darkGrey),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _toggleRead(context),
-        backgroundColor: AppColors.leafGreen,
-        foregroundColor: AppColors.white,
-        child: Icon(_isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded),
-      ),
-    );
-  }
-
-  List<MapEntry<String, String>> _detailRows(List<MapEntry<String, String>> rows) {
-    return rows.where((row) => row.value.trim().isNotEmpty).toList();
-  }
-
-  List<Widget> _buildOverviewTags(
-    BuildContext context,
-    AppLocalizations t,
-    PlantScanResult content,
-  ) {
-    final tags = <Widget>[];
-
-    void addTag(String label) {
-      final text = label.trim();
-      if (text.isEmpty) return;
-      tags.add(_buildOverviewTagChip(context, text));
-    }
-
-    addTag(content.scientificName);
-    if (content.family.trim().isNotEmpty) {
-      addTag('${t.t('field_family')}: ${content.family}');
-    }
-    if (content.genus.trim().isNotEmpty) {
-      addTag('${t.t('field_genus')}: ${content.genus}');
-    }
-    if (content.growthHabit.trim().isNotEmpty) {
-      addTag('${t.t('field_growth_habit')}: ${content.growthHabit}');
-    }
-    if (content.sourceQuality.trim().isNotEmpty) {
-      addTag('${t.t('field_source_quality')}: ${content.sourceQuality}');
-    }
-    if (content.distributionPoints.isNotEmpty) {
-      addTag(
-        '${t.t('distribution_points')}: ${content.distributionPoints.length}',
-      );
-    }
-    if (content.distributionAreas.isNotEmpty) {
-      addTag(
-        '${t.t('distribution_regions')}: ${content.distributionAreas.length}',
-      );
-    }
-
-    return tags;
-  }
-
-  Widget _buildOverviewTagChip(BuildContext context, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.leafGreenSoft,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.leafGreenDark,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNarrativeText(String value) {
-    return Text(
-      ScanResultScreen.valueOrPlaceholder(value),
-      style: const TextStyle(height: 1.55, color: AppColors.blackLight),
-    );
-  }
-
-  Widget _buildDistributionSection(
-    BuildContext context,
-    AppLocalizations t,
-    PlantScanResult content,
-  ) {
-    final hasMap = content.distributionPoints.isNotEmpty;
-    final hasDistributionDetails =
-        hasMap || content.distributionAreas.isNotEmpty;
-    final distributionItemCount = hasMap
-        ? content.distributionPoints.length
-        : content.distributionAreas.length;
-
-    return _sectionCard(
-      title: t.t('distribution_map'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (hasDistributionDetails)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildOverviewTagChip(
-                    context,
-                    hasMap
-                        ? '${t.t('distribution_points')}: ${content.distributionPoints.length}'
-                        : '${t.t('distribution_regions')}: ${content.distributionAreas.length}',
-                  ),
-                  if (content.distributionAreas.isNotEmpty)
-                    _buildOverviewTagChip(
-                      context,
-                      '${t.t('distribution_regions')}: ${content.distributionAreas.length}',
-                    ),
-                ],
-              ),
-            ),
-          if (hasMap)
-            SizedBox(
-              height: 230,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: Stack(
-                  children: [
-                    _buildDistributionMap(
-                      points: content.distributionPoints,
-                      initialZoom: 2.8,
-                      onTap: () => _openExpandedMap(context),
-                    ),
-                    Positioned(
-                      left: 12,
-                      right: 12,
-                      bottom: 12,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.white.withValues(alpha: 0.94),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    t.t('distribution_sheet_summary'),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelLarge
-                                        ?.copyWith(
-                                          color: AppColors.blackLight,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '$distributionItemCount ${t.t('distribution_location').toLowerCase()}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(color: AppColors.darkGrey),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Material(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(12),
-                              child: InkWell(
-                                onTap: () => _openExpandedMap(context),
-                                borderRadius: BorderRadius.circular(12),
-                                child: const Padding(
-                                  padding: EdgeInsets.all(10),
-                                  child: Icon(
-                                    Icons.open_in_full_rounded,
-                                    color: AppColors.blackLight,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            Container(
-              height: 130,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7FBF9),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.cardBorder),
-              ),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Text(
-                    t.t('distribution_not_available'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.darkGrey),
-                  ),
-                ),
-              ),
-            ),
-          if (hasDistributionDetails) ...[
-            const SizedBox(height: 10),
-            if (hasMap)
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _openExpandedMap(context),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.leafGreenDark,
-                    side: const BorderSide(color: AppColors.cardBorder),
-                    minimumSize: const Size(double.infinity, 48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  icon: const Icon(Icons.map_outlined),
-                  label: Text(t.t('distribution_view_map')),
-                ),
-              ),
-            if (hasMap) const SizedBox(height: 10),
-            _buildDetailAction(
-              context: context,
-              label: t.t('distribution_view_details'),
-              count: distributionItemCount,
-              onTap: () => _showDistributionDetails(context),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailAction({
-    required BuildContext context,
-    required String label,
-    required int count,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: AppColors.leafGreenSoft,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.leafMint),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.list_alt_rounded,
-                size: 20,
-                color: AppColors.leafGreenDark,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: AppColors.leafGreenDark,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '$count',
-                  style: const TextStyle(
-                    color: AppColors.leafGreenDark,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              const Icon(
-                Icons.keyboard_arrow_right_rounded,
-                color: AppColors.leafGreenDark,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _toggleRead(BuildContext context) async {
     if (!_ttsReady) {
       _showTtsUnavailable(context);
@@ -573,34 +144,18 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     final languageCode = locale.languageCode.toLowerCase();
     try {
       await _tts.setLanguage(languageCode == 'vi' ? 'vi-VN' : 'en-US');
+      final speakResult = await _tts.speak(text);
+      if (!mounted) return;
+      if (speakResult == 1) {
+        setState(() => _isSpeaking = true);
+      }
     } on MissingPluginException {
-      if (!context.mounted) return;
+      if (!mounted) return;
       _ttsReady = false;
       _showTtsUnavailable(context);
-      return;
     } on PlatformException {
-      if (!context.mounted) return;
+      if (!mounted) return;
       _showTtsUnavailable(context);
-      return;
-    }
-
-    int speakResult;
-    try {
-      speakResult = await _tts.speak(text);
-    } on MissingPluginException {
-      if (!context.mounted) return;
-      _ttsReady = false;
-      _showTtsUnavailable(context);
-      return;
-    } on PlatformException {
-      if (!context.mounted) return;
-      _showTtsUnavailable(context);
-      return;
-    }
-
-    if (!mounted) return;
-    if (speakResult == 1) {
-      setState(() => _isSpeaking = true);
     }
   }
 
@@ -614,6 +169,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
 
   String _buildReadText(BuildContext context) {
     final t = AppLocalizations.of(context);
+    final plant = _contentResult;
     final lines = <String>[];
 
     void addLine(String label, String value) {
@@ -622,249 +178,270 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       lines.add('$label: $trimmed.');
     }
 
-    final content = _contentResult;
-    addLine(t.t('field_common_name'), content.displayName);
-    addLine(t.t('field_scientific_name'), content.scientificName);
-    addLine(t.t('field_family'), content.family);
-    addLine(t.t('field_order'), content.order);
-    addLine(t.t('field_genus'), content.genus);
-    addLine(t.t('field_species'), content.species);
-    addLine(t.t('field_description'), content.description);
-    addLine(t.t('field_uses'), content.uses);
-    addLine(t.t('field_advantages'), content.advantages);
+    addLine(t.t('field_common_name'), plant.commonName);
+    addLine(t.t('field_scientific_name'), plant.scientificName);
+    addLine(t.t('field_family'), plant.family);
+    addLine(t.t('field_order'), plant.order);
+    addLine(t.t('field_genus'), plant.genus);
+    addLine(t.t('field_species'), plant.species);
+    addLine(t.t('field_description'), plant.description);
+    addLine(t.t('field_uses'), plant.uses);
+    addLine(t.t('field_advantages'), plant.advantages);
+    addLine(t.t('plant_toxicity_warning_title'), plant.toxicityWarning);
+    addLine(t.t('plant_safety_notes_title'), plant.safetyNotes);
 
-    if (content.distributionAreas.isNotEmpty) {
-      addLine(
-        t.t('distribution_map'),
-        content.distributionAreas.join(', '),
-      );
+    if (plant.distributionAreas.isNotEmpty) {
+      addLine(t.t('distribution_map'), plant.distributionAreas.join(', '));
     }
 
     return lines.join(' ');
   }
 
-  Widget _imageHeader(
-    BuildContext context,
-    AppLocalizations t,
-    PlantScanResult content,
-  ) {
-    final confidence = content.confidence;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.06),
-            blurRadius: 26,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: Image.memory(
-                  widget.imageBytes,
-                  width: 108,
-                  height: 108,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.leafGreenSoft,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            '${t.t('scan_framework_badge')}: $_frameworkLabel',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.leafGreenDark,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        if (_fetchingDetails)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              t.t('scan_fast_analysis'),
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: AppColors.darkGrey,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      ScanResultScreen.valueOrPlaceholder(content.displayName),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: AppColors.blackLight,
-                        fontSize: 26,
-                      ),
-                    ),
-                    if (content.scientificName.trim().isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        content.scientificName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.darkGrey,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      confidence == null
-                          ? t.t('confidence_unknown')
-                          : '${t.t('confidence')}: ${(confidence * 100).toStringAsFixed(1)}%',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: AppColors.blackLight,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        value: confidence == null
-                            ? 0.18
-                            : confidence.clamp(0.0, 1.0).toDouble(),
-                        minHeight: 7,
-                        color: AppColors.leafGreen,
-                        backgroundColor: AppColors.leafMint,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+  void _sharePlantDetail() {
+    final plant = _contentResult;
+    final payload = [
+      plant.scientificName,
+      if (plant.commonName.trim().isNotEmpty) plant.commonName,
+      if (plant.description.trim().isNotEmpty) plant.description,
+    ].join('\n');
+
+    Clipboard.setData(ClipboardData(text: payload));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context).t('toast_saved_clipboard'))),
     );
   }
 
-  Widget _sectionCard({required String title, required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.05),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: AppColors.blackLight,
-            ),
-          ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
-  }
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final plant = _contentResult;
 
-  Widget _buildDistributionMap({
-    required List<PlantDistributionPoint> points,
-    required double initialZoom,
-    VoidCallback? onTap,
-  }) {
-    return FlutterMap(
-      options: MapOptions(
-        initialCenter: _centerPoint(points),
-        initialZoom: initialZoom,
-        onTap: onTap == null ? null : (_, _) => onTap(),
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.bigplant.app',
-        ),
-        MarkerLayer(
-          markers: points
-              .map(
-                (point) => Marker(
-                  point: LatLng(point.lat, point.lng),
-                  width: 38,
-                  height: 38,
-                  child: const Icon(
-                    Icons.location_on_rounded,
-                    color: AppColors.leafGreenDark,
-                    size: 32,
+    return Scaffold(
+      backgroundColor: AppColors.surfaceContainerLow,
+      body: Stack(
+        children: [
+          ListView(
+            padding: const EdgeInsets.fromLTRB(24, 88, 24, 120),
+            children: [
+              _HeroSection(
+                imageBytes: widget.imageBytes,
+                familyLabel: plant.family,
+                title: _primaryDisplayTitle(plant),
+                subtitle: _secondaryDisplayTitle(plant),
+                frameworkLabel: _frameworkLabel,
+                confidence: plant.confidence,
+              ),
+              const SizedBox(height: 24),
+              if (_fetchingDetails) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: const LinearProgressIndicator(
+                    minHeight: 4,
+                    color: AppColors.primary,
+                    backgroundColor: AppColors.primaryFixed,
                   ),
                 ),
-              )
-              .toList(),
-        ),
-      ],
+                const SizedBox(height: 16),
+              ],
+              if (_fetchError != null) ...[
+                _InlineWarning(message: _fetchError!),
+                const SizedBox(height: 16),
+              ],
+              _PlantSectionCard(
+                title: t.t('plant_section_ecology'),
+                icon: Icons.eco,
+                source: plant.sourceForField('description'),
+                child: Text(
+                  ScanResultScreen.valueOrPlaceholder(plant.description),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                    height: 1.8,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _EvidenceSafetyCard(plant: plant),
+              const SizedBox(height: 24),
+              _TechnicalMetadataCard(
+                expanded: _technicalExpanded,
+                title: t.t('plant_section_technical'),
+                metadata: _technicalMetadataText(plant),
+                onToggle: () {
+                  setState(() {
+                    _technicalExpanded = !_technicalExpanded;
+                  });
+                },
+              ),
+              const SizedBox(height: 24),
+              _PlantSectionCard(
+                title: t.t('plant_section_taxonomy'),
+                icon: Icons.account_tree,
+                child: Column(
+                  children: _taxonomyRows(t, plant)
+                      .map((row) => _TaxonomyRow(item: row))
+                      .toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _UtilityBenefitsCard(items: _benefitItems(t, plant)),
+              const SizedBox(height: 24),
+              _DistributionCard(
+                plant: plant,
+                onOpenMap: () => _openExpandedMap(context),
+                onOpenDetails: () => _showDistributionDetails(context),
+              ),
+            ],
+          ),
+          _PlantDetailTopBar(
+            title: t.t('plant_report_title'),
+            onBack: () => Navigator.of(context).pop(),
+            onShare: _sharePlantDetail,
+          ),
+        ],
+      ),
+      floatingActionButton: _VoiceButton(
+        speaking: _isSpeaking,
+        onTap: () => _toggleRead(context),
+      ),
     );
+  }
+
+  String _primaryDisplayTitle(PlantScanResult plant) {
+    final scientific = plant.scientificName.trim();
+    if (scientific.isNotEmpty) return scientific;
+    return plant.displayName.trim();
+  }
+
+  String _secondaryDisplayTitle(PlantScanResult plant) {
+    final common = plant.commonName.trim();
+    if (common.isNotEmpty) return common;
+    final display = plant.displayName.trim();
+    if (display.isNotEmpty && display != plant.scientificName.trim()) {
+      return display;
+    }
+    return '';
+  }
+
+  String _technicalMetadataText(PlantScanResult plant) {
+    if (plant.note.trim().isNotEmpty) return plant.note;
+
+    final data = <String, dynamic>{
+      'scientific_name': plant.scientificName,
+      'scientific_name_search': plant.scientificNameSearch,
+      'common_name': plant.commonName,
+      'family': plant.family,
+      'taxonomic_order': plant.order,
+      'genus': plant.genus,
+      'species': plant.species,
+      'taxonomic_status': plant.taxonomicStatus,
+      'evidence_level': plant.evidenceLevel,
+      'source': plant.source,
+      'confidence': plant.confidence,
+    };
+    return const JsonEncoder.withIndent('  ').convert(data);
+  }
+
+  List<_TaxonomyItem> _taxonomyRows(
+    AppLocalizations t,
+    PlantScanResult plant,
+  ) {
+    return [
+      _TaxonomyItem(
+        label: t.t('field_scientific_name'),
+        value: plant.scientificName,
+        source: plant.sourceForField('scientific_name'),
+        italic: true,
+      ),
+      _TaxonomyItem(
+        label: t.t('field_family'),
+        value: plant.family,
+        source: plant.sourceForField('family'),
+      ),
+      _TaxonomyItem(
+        label: t.t('field_order'),
+        value: plant.order,
+        source: plant.sourceForField('taxonomic_order'),
+      ),
+      _TaxonomyItem(
+        label: t.t('field_genus'),
+        value: plant.genus,
+        source: plant.sourceForField('genus'),
+        italic: true,
+      ),
+      _TaxonomyItem(
+        label: t.t('field_species'),
+        value: plant.species,
+        source: plant.sourceForField('species'),
+        italic: true,
+      ),
+      _TaxonomyItem(
+        label: t.t('plant_taxonomic_status_label'),
+        value: _prettifyLabel(plant.taxonomicStatus),
+        source: plant.sourceForField('taxonomic_status'),
+      ),
+    ].where((item) => item.value.trim().isNotEmpty).toList();
+  }
+
+  List<_BenefitItem> _benefitItems(
+    AppLocalizations t,
+    PlantScanResult plant,
+  ) {
+    final items = <_BenefitItem>[];
+
+    if (plant.uses.trim().isNotEmpty) {
+      items.add(
+        _BenefitItem(
+          title: t.t('field_uses'),
+          description: plant.uses,
+          icon: Icons.spa,
+          source: plant.sourceForField('uses'),
+        ),
+      );
+    }
+    if (plant.advantages.trim().isNotEmpty) {
+      items.add(
+        _BenefitItem(
+          title: t.t('field_advantages'),
+          description: plant.advantages,
+          icon: Icons.workspace_premium,
+          source: plant.sourceForField('advantages'),
+        ),
+      );
+    }
+
+    if (items.isEmpty) {
+      items.add(
+        _BenefitItem(
+          title: t.t('field_uses'),
+          description: t.t('distribution_not_available'),
+          icon: Icons.info_outline,
+          source: '',
+        ),
+      );
+    }
+
+    return items;
+  }
+
+  String _prettifyLabel(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) return raw;
+    return raw
+        .split(RegExp(r'[_\s]+'))
+        .map((part) =>
+            part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+        .join(' ');
   }
 
   Future<void> _openExpandedMap(BuildContext context) async {
     final t = AppLocalizations.of(context);
-    final content = _contentResult;
+    final plant = _contentResult;
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _FullscreenDistributionMapScreen(
+        builder: (_) => _DistributionMapScreen(
           title: t.t('distribution_map'),
-          points: content.distributionPoints,
-          areas: content.distributionAreas,
+          points: plant.distributionPoints,
+          areas: plant.distributionAreas,
           onOpenDetails: _showDistributionDetails,
         ),
       ),
@@ -873,259 +450,274 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
 
   Future<void> _showDistributionDetails(BuildContext context) async {
     final t = AppLocalizations.of(context);
-    final content = _contentResult;
-    final pointItems = content.distributionPoints;
-    final areaItems = content.distributionAreas;
+    final plant = _contentResult;
+    final pointItems = plant.distributionPoints;
+    final areaItems = plant.distributionAreas;
+
+    IconData iconForPoint(PlantDistributionPoint point) {
+      final label = point.label.toLowerCase();
+      if (label.contains('forest')) return Icons.forest;
+      if (label.contains('rain')) return Icons.public;
+      if (label.contains('terrain')) return Icons.terrain;
+      return Icons.landscape;
+    }
 
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        var showingPoints = pointItems.isNotEmpty;
-
-        return StatefulBuilder(
-          builder: (sheetContext, setSheetState) {
-            final showingList = showingPoints ? pointItems : areaItems;
-            final currentCount = showingList.length;
-
-            return SafeArea(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-                ),
-                child: SizedBox(
-                  height: MediaQuery.of(sheetContext).size.height * 0.74,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    t.t('distribution_detail_title'),
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.blackLight,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    t.t('distribution_sheet_summary'),
-                                    style: const TextStyle(
-                                      color: AppColors.darkGrey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.leafGreenSoft,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                '$currentCount',
-                                style: const TextStyle(
-                                  color: AppColors.leafGreenDark,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: () => Navigator.of(sheetContext).pop(),
-                              icon: const Icon(Icons.close_rounded),
-                            ),
-                          ],
-                        ),
-                        if (pointItems.isNotEmpty && areaItems.isNotEmpty) ...[
-                          const SizedBox(height: 14),
-                          Wrap(
-                            spacing: 8,
-                            children: [
-                              ChoiceChip(
-                                label: Text(t.t('distribution_points')),
-                                selected: showingPoints,
-                                onSelected: (_) => setSheetState(() {
-                                  showingPoints = true;
-                                }),
-                              ),
-                              ChoiceChip(
-                                label: Text(t.t('distribution_regions')),
-                                selected: !showingPoints,
-                                onSelected: (_) => setSheetState(() {
-                                  showingPoints = false;
-                                }),
-                              ),
-                            ],
-                          ),
-                        ],
-                        const SizedBox(height: 14),
-                        Expanded(
-                          child: ListView.separated(
-                            itemCount: showingList.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: 10),
-                            itemBuilder: (_, index) {
-                              if (showingPoints) {
-                                final point = pointItems[index];
-                                final title = point.label.trim().isEmpty
-                                    ? '${t.t('distribution_location')} ${index + 1}'
-                                    : point.label;
-                                return Container(
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surface,
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        width: 42,
-                                        height: 42,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.leafGreenSoft,
-                                          borderRadius: BorderRadius.circular(14),
-                                        ),
-                                        child: const Icon(
-                                          Icons.place_rounded,
-                                          color: AppColors.leafGreenDark,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              title,
-                                              style: const TextStyle(
-                                                color: AppColors.blackLight,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '${point.lat.toStringAsFixed(4)}, ${point.lng.toStringAsFixed(4)}',
-                                              style: const TextStyle(
-                                                color: AppColors.darkGrey,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-
-                              final area = areaItems[index];
-                              return Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      width: 42,
-                                      height: 42,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.leafGreenSoft,
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      child: const Icon(
-                                        Icons.location_city_rounded,
-                                        color: AppColors.leafGreenDark,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        area,
-                                        style: const TextStyle(
-                                          color: AppColors.blackLight,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+        return SafeArea(
+          child: Container(
+            height: 530,
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                Container(
+                  width: 48,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(999),
                   ),
                 ),
-              ),
-            );
-          },
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          t.t('distribution_detail_title'),
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 24,
+                          ),
+                        ),
+                      ),
+                      Material(
+                        color: AppColors.surfaceContainer,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          onTap: () => Navigator.of(sheetContext).pop(),
+                          customBorder: const CircleBorder(),
+                          child: const SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Icon(
+                              Icons.close,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: AppColors.surfaceContainerHighest),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    children: [
+                      if (pointItems.isNotEmpty)
+                        for (final point in pointItems) ...[
+                          _DistributionListTile(
+                            icon: iconForPoint(point),
+                            title: point.label.trim().isEmpty
+                                ? t.t('distribution_location')
+                                : point.label,
+                            subtitle:
+                                '${point.lat.toStringAsFixed(4)}, ${point.lng.toStringAsFixed(4)}',
+                          ),
+                          const SizedBox(height: 12),
+                        ]
+                      else
+                        for (final area in areaItems) ...[
+                          _DistributionListTile(
+                            icon: Icons.public,
+                            title: area,
+                            subtitle: t.t('distribution_regions'),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
   }
-
-  LatLng _centerPoint(List<PlantDistributionPoint> points) {
-    if (points.isEmpty) return const LatLng(16.0471, 108.2068);
-    final latAvg =
-        points.fold<double>(0, (sum, item) => sum + item.lat) / points.length;
-    final lngAvg =
-        points.fold<double>(0, (sum, item) => sum + item.lng) / points.length;
-    return LatLng(latAvg, lngAvg);
-  }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
+class _PlantDetailTopBar extends StatelessWidget {
+  const _PlantDetailTopBar({
+    required this.title,
+    required this.onBack,
+    required this.onShare,
+  });
 
-  final String label;
-  final String value;
+  final String title;
+  final VoidCallback onBack;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+    return SafeArea(
+      bottom: false,
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.surfaceContainerLow.withValues(alpha: 0.9),
+          border: Border(
+            bottom: BorderSide(
+              color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
+            ),
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.leafGreenDark,
-                fontWeight: FontWeight.w700,
+            _TopActionButton(icon: Icons.arrow_back, onTap: onBack),
+            Expanded(
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 24,
+                ),
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              ScanResultScreen.valueOrPlaceholder(value),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.blackLight,
-                fontWeight: FontWeight.w600,
-                height: 1.45,
+            _TopActionButton(icon: Icons.share, onTap: onShare),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TopActionButton extends StatelessWidget {
+  const _TopActionButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.5),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, color: AppColors.onSurfaceVariant),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroSection extends StatelessWidget {
+  const _HeroSection({
+    required this.imageBytes,
+    required this.familyLabel,
+    required this.title,
+    required this.subtitle,
+    required this.frameworkLabel,
+    required this.confidence,
+  });
+
+  final Uint8List imageBytes;
+  final String familyLabel;
+  final String title;
+  final String subtitle;
+  final String frameworkLabel;
+  final double? confidence;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 400,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.memory(imageBytes, fit: BoxFit.cover),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0xCC000000)],
+                  stops: [0.35, 1],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 24,
+              right: 24,
+              bottom: 24,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (familyLabel.trim().isNotEmpty)
+                    Text(
+                      '$familyLabel Family',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppColors.primaryFixed,
+                        letterSpacing: 2.8,
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                      color: AppColors.white,
+                      fontStyle: FontStyle.italic,
+                      fontSize: 40,
+                      height: 1.1,
+                    ),
+                  ),
+                  if (subtitle.trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppColors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _HeroChip(
+                        icon: Icons.psychology,
+                        label: frameworkLabel,
+                        dark: true,
+                      ),
+                      _HeroChip(
+                        icon: Icons.verified,
+                        label: confidence == null
+                            ? 'Unknown Confidence'
+                            : '${(confidence! * 100).toStringAsFixed(1)}% Confidence',
+                        dark: false,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -1135,8 +727,871 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _FullscreenDistributionMapScreen extends StatefulWidget {
-  const _FullscreenDistributionMapScreen({
+class _HeroChip extends StatelessWidget {
+  const _HeroChip({
+    required this.icon,
+    required this.label,
+    required this.dark,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: dark ? Colors.white.withValues(alpha: 0.1) : AppColors.primary,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: dark
+              ? Colors.white.withValues(alpha: 0.2)
+              : AppColors.primary.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.white, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: AppColors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InlineWarning extends StatelessWidget {
+  const _InlineWarning({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E0),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFFD8A8)),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(color: Color(0xFF8A4B00)),
+      ),
+    );
+  }
+}
+
+class _PlantSectionCard extends StatelessWidget {
+  const _PlantSectionCard({
+    required this.title,
+    required this.icon,
+    required this.child,
+    this.source,
+    this.accentColor,
+    this.borderLeft,
+  });
+
+  final String title;
+  final IconData icon;
+  final Widget child;
+  final String? source;
+  final Color? accentColor;
+  final BorderSide? borderLeft;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = accentColor ?? AppColors.primary;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.06),
+            blurRadius: 30,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: borderLeft == null ? null : Border(left: borderLeft!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+              if ((source ?? '').trim().isNotEmpty) _SourceBadge(source: source!),
+            ],
+          ),
+          const SizedBox(height: 24),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _SourceBadge extends StatelessWidget {
+  const _SourceBadge({required this.source});
+
+  final String source;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        source.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: AppColors.onSurfaceVariant,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _EvidenceSafetyCard extends StatelessWidget {
+  const _EvidenceSafetyCard({required this.plant});
+
+  final PlantScanResult plant;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+
+    return _PlantSectionCard(
+      title: t.t('plant_section_evidence'),
+      icon: Icons.health_and_safety,
+      source: plant.sourceForField('evidence_level'),
+      accentColor: AppColors.error,
+      borderLeft: const BorderSide(color: AppColors.error, width: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t.t('plant_evidence_level_label'),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: AppColors.onSurfaceVariant,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.secondaryContainer,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.fact_check, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  plant.evidenceLevel.trim().isEmpty
+                      ? t.t('plant_evidence_unknown')
+                      : _prettyEnum(plant.evidenceLevel),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (plant.toxicityWarning.trim().isNotEmpty)
+            _DangerInfoCard(
+              title: t.t('plant_toxicity_warning_title'),
+              icon: Icons.warning,
+              background: AppColors.errorContainer.withValues(alpha: 0.2),
+              border: AppColors.errorContainer,
+              titleColor: AppColors.error,
+              content: plant.toxicityWarning,
+            ),
+          if (plant.toxicityWarning.trim().isNotEmpty) const SizedBox(height: 16),
+          if (plant.safetyNotes.trim().isNotEmpty)
+            _DangerInfoCard(
+              title: t.t('plant_safety_notes_title'),
+              icon: Icons.info,
+              background: AppColors.surfaceContainer,
+              border: Colors.transparent,
+              titleColor: AppColors.primary,
+              content: plant.safetyNotes,
+              bullet: true,
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _prettyEnum(String value) {
+    return value
+        .split(RegExp(r'[_\s]+'))
+        .map((part) =>
+            part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+        .join(' ');
+  }
+}
+
+class _DangerInfoCard extends StatelessWidget {
+  const _DangerInfoCard({
+    required this.title,
+    required this.icon,
+    required this.background,
+    required this.border,
+    required this.titleColor,
+    required this.content,
+    this.bullet = false,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color background;
+  final Color border;
+  final Color titleColor;
+  final String content;
+  final bool bullet;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: titleColor),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: titleColor,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (bullet)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _asBulletLines(content)
+                  .map(
+                    (line) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('• ', style: TextStyle(color: AppColors.onSurfaceVariant)),
+                          Expanded(
+                            child: Text(
+                              line,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                                height: 1.6,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+            )
+          else
+            Text(
+              content,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.onSurfaceVariant,
+                height: 1.6,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _asBulletLines(String raw) {
+    final lines = raw
+        .split(RegExp(r'\n|•|;'))
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+    return lines.isEmpty ? [raw.trim()] : lines;
+  }
+}
+
+class _TechnicalMetadataCard extends StatelessWidget {
+  const _TechnicalMetadataCard({
+    required this.expanded,
+    required this.title,
+    required this.metadata,
+    required this.onToggle,
+  });
+
+  final bool expanded;
+  final String title;
+  final String metadata;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.surfaceContainerHighest),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(24),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  const Icon(Icons.code, color: AppColors.outline),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    expanded ? Icons.expand_less : Icons.expand_more,
+                    color: AppColors.outline,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1C1A),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: SelectableText(
+                  metadata,
+                  style: const TextStyle(
+                    color: AppColors.primaryFixed,
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaxonomyItem {
+  const _TaxonomyItem({
+    required this.label,
+    required this.value,
+    required this.source,
+    this.italic = false,
+  });
+
+  final String label;
+  final String value;
+  final String source;
+  final bool italic;
+}
+
+class _TaxonomyRow extends StatelessWidget {
+  const _TaxonomyRow({required this.item});
+
+  final _TaxonomyItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              item.label.toUpperCase(),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  item.value,
+                  textAlign: TextAlign.right,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontStyle: item.italic ? FontStyle.italic : FontStyle.normal,
+                  ),
+                ),
+                if (item.source.trim().isNotEmpty)
+                  Text(
+                    ' [${item.source.toLowerCase()}]',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.outline,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BenefitItem {
+  const _BenefitItem({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.source,
+  });
+
+  final String title;
+  final String description;
+  final IconData icon;
+  final String source;
+}
+
+class _UtilityBenefitsCard extends StatelessWidget {
+  const _UtilityBenefitsCard({required this.items});
+
+  final List<_BenefitItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.primaryContainer,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            blurRadius: 30,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.workspace_premium, color: AppColors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  t.t('plant_section_utility'),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: AppColors.white,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          for (var i = 0; i < items.length; i++) ...[
+            _BenefitTile(item: items[i]),
+            if (i != items.length - 1) const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BenefitTile extends StatelessWidget {
+  const _BenefitTile({required this.item});
+
+  final _BenefitItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  item.title,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (item.source.trim().isNotEmpty)
+                Text(
+                  '[${item.source.toLowerCase()}]',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(item.icon, color: AppColors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  item.description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DistributionCard extends StatelessWidget {
+  const _DistributionCard({
+    required this.plant,
+    required this.onOpenMap,
+    required this.onOpenDetails,
+  });
+
+  final PlantScanResult plant;
+  final VoidCallback onOpenMap;
+  final VoidCallback onOpenDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final hasMap = plant.distributionPoints.isNotEmpty;
+    final summary = plant.distributionAreas.isNotEmpty
+        ? plant.distributionAreas.first
+        : t.t('distribution_not_available');
+
+    return _PlantSectionCard(
+      title: t.t('plant_section_distribution'),
+      icon: Icons.public,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 224,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onOpenMap,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (hasMap)
+                        FlutterMap(
+                          options: MapOptions(
+                            initialCenter: _centerPoint(plant.distributionPoints),
+                            initialZoom: 2.8,
+                            interactionOptions: const InteractionOptions(
+                              flags: InteractiveFlag.none,
+                            ),
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'com.bigplant.app',
+                            ),
+                            MarkerLayer(
+                              markers: plant.distributionPoints
+                                  .map(
+                                    (point) => Marker(
+                                      point: LatLng(point.lat, point.lng),
+                                      width: 40,
+                                      height: 40,
+                                      child: const Icon(
+                                        Icons.location_on,
+                                        color: AppColors.primary,
+                                        size: 36,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ],
+                        )
+                      else
+                        Container(color: AppColors.surfaceContainerHigh),
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: IgnorePointer(
+                          child: CustomPaint(painter: _DottedMapOverlayPainter()),
+                        ),
+                      ),
+                      const Center(
+                        child: Icon(
+                          Icons.location_on,
+                          color: AppColors.primary,
+                          size: 40,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            summary,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: onOpenDetails,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              padding: EdgeInsets.zero,
+            ),
+            icon: const Icon(Icons.format_list_bulleted),
+            label: Text(t.t('distribution_view_details')),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: onOpenMap,
+            style: OutlinedButton.styleFrom(
+              backgroundColor: AppColors.surfaceContainer,
+              foregroundColor: AppColors.primary,
+              minimumSize: const Size(double.infinity, 52),
+              side: BorderSide.none,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(t.t('plant_view_interactive_map')),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward, size: 18),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  LatLng _centerPoint(List<PlantDistributionPoint> points) {
+    if (points.isEmpty) return const LatLng(16.0471, 108.2068);
+    final latAvg = points.fold<double>(0, (sum, item) => sum + item.lat) /
+        points.length;
+    final lngAvg = points.fold<double>(0, (sum, item) => sum + item.lng) /
+        points.length;
+    return LatLng(latAvg, lngAvg);
+  }
+}
+
+class _DottedMapOverlayPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = AppColors.primary.withValues(alpha: 0.18);
+    const spacing = 16.0;
+    const radius = 1.5;
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), radius, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _VoiceButton extends StatelessWidget {
+  const _VoiceButton({required this.speaking, required this.onTap});
+
+  final bool speaking;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 64,
+      height: 64,
+      child: FloatingActionButton(
+        onPressed: onTap,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Icon(
+          speaking ? Icons.stop_rounded : Icons.record_voice_over,
+          size: 30,
+        ),
+      ),
+    );
+  }
+}
+
+class _DistributionListTile extends StatelessWidget {
+  const _DistributionListTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.secondaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.primary),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppColors.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: AppColors.primary),
+        ],
+      ),
+    );
+  }
+}
+
+class _DistributionMapScreen extends StatefulWidget {
+  const _DistributionMapScreen({
     required this.title,
     required this.points,
     required this.areas,
@@ -1149,48 +1604,19 @@ class _FullscreenDistributionMapScreen extends StatefulWidget {
   final Future<void> Function(BuildContext context) onOpenDetails;
 
   @override
-  State<_FullscreenDistributionMapScreen> createState() =>
-      _FullscreenDistributionMapScreenState();
+  State<_DistributionMapScreen> createState() => _DistributionMapScreenState();
 }
 
-class _FullscreenDistributionMapScreenState
-    extends State<_FullscreenDistributionMapScreen> {
+class _DistributionMapScreenState extends State<_DistributionMapScreen> {
   final MapController _mapController = MapController();
 
   LatLng get _center {
     if (widget.points.isEmpty) return const LatLng(16.0471, 108.2068);
-    final latAvg = widget.points.fold<double>(
-          0,
-          (sum, item) => sum + item.lat,
-        ) /
+    final latAvg = widget.points.fold<double>(0, (sum, item) => sum + item.lat) /
         widget.points.length;
-    final lngAvg = widget.points.fold<double>(
-          0,
-          (sum, item) => sum + item.lng,
-        ) /
+    final lngAvg = widget.points.fold<double>(0, (sum, item) => sum + item.lng) /
         widget.points.length;
     return LatLng(latAvg, lngAvg);
-  }
-
-  void _recenter() {
-    _mapController.move(_center, widget.points.isEmpty ? 2.8 : 4.0);
-  }
-
-  void _locateFirstPoint() {
-    if (widget.points.isEmpty) {
-      _recenter();
-      return;
-    }
-    final first = widget.points.first;
-    _mapController.move(LatLng(first.lat, first.lng), 5.2);
-  }
-
-  void _showLayersHint(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Map layers follow the configured Flutter map source.'),
-      ),
-    );
   }
 
   @override
@@ -1201,7 +1627,7 @@ class _FullscreenDistributionMapScreenState
         : widget.areas.length;
 
     return Scaffold(
-      backgroundColor: AppColors.blackLight,
+      backgroundColor: AppColors.surface,
       body: Stack(
         children: [
           Positioned.fill(
@@ -1218,12 +1644,23 @@ class _FullscreenDistributionMapScreenState
                       .map(
                         (point) => Marker(
                           point: LatLng(point.lat, point.lng),
-                          width: 38,
-                          height: 38,
-                          child: const Icon(
-                            Icons.location_on_rounded,
-                            color: AppColors.leafGreenDark,
-                            size: 32,
+                          width: 40,
+                          height: 40,
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.surface,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       )
@@ -1232,178 +1669,108 @@ class _FullscreenDistributionMapScreenState
               ],
             ),
           ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.22),
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.18),
+          SafeArea(
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                  color: AppColors.surface.withValues(alpha: 0.8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+                      ),
+                      Expanded(
+                        child: Text(
+                          widget.title,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 48),
                     ],
                   ),
                 ),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: Column(
-                children: [
-                  Row(
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Material(
-                        color: AppColors.white.withValues(alpha: 0.94),
-                        borderRadius: BorderRadius.circular(16),
-                        child: InkWell(
-                          onTap: () => Navigator.of(context).pop(),
+                      Container(
+                        width: 280,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(16),
-                          child: const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Icon(
-                              Icons.arrow_back_rounded,
-                              color: AppColors.blackLight,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.white.withValues(alpha: 0.94),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  widget.title,
-                                  style: const TextStyle(
-                                    color: AppColors.blackLight,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.leafGreenSoft,
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  '$locationCount',
-                                  style: const TextStyle(
-                                    color: AppColors.leafGreenDark,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _MapActionButton(
-                          icon: Icons.layers_outlined,
-                          label: t.t('distribution_layers'),
-                          onTap: () => _showLayersHint(context),
-                        ),
-                        const SizedBox(height: 10),
-                        _MapActionButton(
-                          icon: Icons.tune_rounded,
-                          label: t.t('distribution_filter'),
-                          onTap: () => widget.onOpenDetails(context),
-                        ),
-                        const SizedBox(height: 10),
-                        _MapActionButton(
-                          icon: Icons.center_focus_strong_rounded,
-                          label: t.t('distribution_recenter'),
-                          onTap: _recenter,
-                        ),
-                        const SizedBox(height: 10),
-                        _MapActionButton(
-                          icon: Icons.my_location_rounded,
-                          label: t.t('distribution_locate'),
-                          onTap: _locateFirstPoint,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.96),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          t.t('distribution_sheet_summary'),
-                          style: const TextStyle(
-                            color: AppColors.blackLight,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _MapSummaryPill(
-                              label:
-                                  '${t.t('distribution_points')}: ${widget.points.length}',
-                            ),
-                            _MapSummaryPill(
-                              label:
-                                  '${t.t('distribution_regions')}: ${widget.areas.length}',
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.08),
+                              blurRadius: 32,
+                              offset: const Offset(0, 12),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () => widget.onOpenDetails(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.leafGreen,
-                              foregroundColor: AppColors.white,
-                              minimumSize: const Size(double.infinity, 48),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.eco, color: AppColors.primary),
+                                const SizedBox(width: 8),
+                                Text(
+                                  t.t('distribution_ecology_title'),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(color: AppColors.onSurface),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              t.t('distribution_found_template').replaceFirst(
+                                    '{count}',
+                                    '$locationCount',
+                                  ),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.onSurfaceVariant,
                               ),
                             ),
-                            icon: const Icon(Icons.list_alt_rounded),
-                            label: Text(t.t('distribution_view_details')),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _MapChip(label: t.t('distribution_biome_chip')),
+                                _MapChip(label: t.t('distribution_humidity_chip')),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () => widget.onOpenDetails(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.onPrimary,
+                          minimumSize: const Size(double.infinity, 52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                      ],
-                    ),
+                        icon: const Icon(Icons.format_list_bulleted),
+                        label: Text(t.t('distribution_detail_button')),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1412,49 +1779,8 @@ class _FullscreenDistributionMapScreenState
   }
 }
 
-class _MapActionButton extends StatelessWidget {
-  const _MapActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white.withValues(alpha: 0.94),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: AppColors.blackLight),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: AppColors.blackLight,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MapSummaryPill extends StatelessWidget {
-  const _MapSummaryPill({required this.label});
+class _MapChip extends StatelessWidget {
+  const _MapChip({required this.label});
 
   final String label;
 
@@ -1463,14 +1789,13 @@ class _MapSummaryPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.leafGreenSoft,
+        color: AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: AppColors.leafGreenDark,
-          fontWeight: FontWeight.w700,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: AppColors.onSurfaceVariant,
         ),
       ),
     );

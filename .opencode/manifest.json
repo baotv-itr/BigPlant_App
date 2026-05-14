@@ -5,7 +5,8 @@
   "context": [
     "context/project_overview.md",
     "context/database_architecture.md",
-    "context/scan_onnx_runtime.md"
+    "context/scan_onnx_runtime.md",
+    "context/plant_detail_schema.md"
   ],
   "agents": [
     {
