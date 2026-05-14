@@ -356,15 +356,42 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
     final t = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t.t('scan_camera_realtime_title')),
-        backgroundColor: AppColors.leafGreen,
-        foregroundColor: AppColors.white,
-      ),
+      backgroundColor: Colors.black,
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(color: AppColors.white),
+                  const SizedBox(height: 16),
+                  Text(
+                    t.t('scan_camera_realtime_title'),
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            )
           : _error != null
-              ? Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(_error!)))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: AppColors.blackLight),
+                      ),
+                    ),
+                  ),
+                )
               : _buildBody(t),
     );
   }
@@ -372,101 +399,322 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
   Widget _buildBody(AppLocalizations t) {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) {
-      return Center(child: Text(t.t('scan_camera_init_failed')));
+      return Center(
+        child: Text(
+          t.t('scan_camera_init_failed'),
+          style: const TextStyle(color: AppColors.white),
+        ),
+      );
     }
 
     return Stack(
       children: [
         Positioned.fill(child: CameraPreview(controller)),
-        Positioned(
-          left: 12,
-          right: 12,
-          top: 12,
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.58),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  t.t('scan_local_mode_badge'),
-                  style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.42),
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.5),
+                  ],
+                  stops: const [0, 0.35, 1],
                 ),
-                const SizedBox(height: 8),
-                if (_modelIds.isNotEmpty)
-                  DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedModelId,
-                      dropdownColor: const Color(0xFF2E3A31),
-                      iconEnabledColor: Colors.white,
-                      style: const TextStyle(color: Colors.white),
-                      items: _modelIds
-                          .map(
-                            (id) => DropdownMenuItem<String>(
-                              value: id,
-                              child: Text(id),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value == null) return;
-                        _changeModel(value);
-                      },
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         ),
-        Positioned(
-          left: 12,
-          right: 12,
-          bottom: 18,
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.58),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+        Positioned.fill(child: IgnorePointer(child: _buildGuideFrame(t))),
+        _buildTopOverlay(context, t),
+        _buildBottomOverlay(context, t),
+      ],
+    );
+  }
+
+  Widget _buildTopOverlay(BuildContext context, AppLocalizations t) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  _latestResult == null
-                      ? t.t('scan_realtime_waiting')
-                      : '${_latestResult!.label} ${(100 * _latestResult!.confidence).toStringAsFixed(1)}%',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                Material(
+                  color: Colors.black.withValues(alpha: 0.34),
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: AppColors.white,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  'Model: ${_selectedModelId ?? '-'} | Format: $_lastFrameFormat | Infer: ${_lastInferLatencyMs}ms',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _cameraPill(
+                        icon: Icons.eco_rounded,
+                        label: t.t('scan_live_analysis'),
+                        accent: AppColors.leafMint,
+                      ),
+                      _cameraPill(
+                        icon: Icons.memory_rounded,
+                        label: t.t('scan_local_mode_badge'),
+                      ),
+                    ],
+                  ),
                 ),
-                if (_lastInferError != null) ...[
-                  const SizedBox(height: 6),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.38),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.tune_rounded,
+                        color: AppColors.white,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          t.t('scan_local_model'),
+                          style: const TextStyle(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (_inferBusy)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.leafGreen.withValues(alpha: 0.22),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.white,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'LIVE',
+                                style: TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (_modelIds.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedModelId,
+                          isExpanded: true,
+                          dropdownColor: const Color(0xFF213228),
+                          borderRadius: BorderRadius.circular(20),
+                          iconEnabledColor: Colors.white,
+                          style: const TextStyle(color: Colors.white),
+                          items: _modelIds
+                              .map(
+                                (id) => DropdownMenuItem<String>(
+                                  value: id,
+                                  child: Text(id),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
+                            _changeModel(value);
+                          },
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 10),
                   Text(
-                    _lastInferError!,
-                    style: const TextStyle(color: Colors.orangeAccent, fontSize: 12),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    t.t('scan_target_hint'),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
                   ),
                 ],
-                const SizedBox(height: 10),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomOverlay(BuildContext context, AppLocalizations t) {
+    final latest = _latestResult;
+    final confidence = latest?.confidence ?? 0.0;
+
+    return SafeArea(
+      top: false,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.42),
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            latest == null ? t.t('scan_realtime_waiting') : latest.label,
+                            style: const TextStyle(
+                              color: AppColors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            latest == null
+                                ? t.t('scan_center_guide')
+                                : t.t('scan_prediction_ready'),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (latest != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.leafGreen.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '${(confidence * 100).toStringAsFixed(1)}%',
+                          style: const TextStyle(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: latest == null
+                            ? null
+                            : confidence.clamp(0.0, 1.0).toDouble(),
+                        minHeight: 6,
+                        color: AppColors.leafMint,
+                        backgroundColor: Colors.white.withValues(alpha: 0.12),
+                      ),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _cameraMetaChip('Model', _selectedModelId ?? '-'),
+                    _cameraMetaChip('Format', _lastFrameFormat),
+                    _cameraMetaChip('Infer', '${_lastInferLatencyMs}ms'),
+                  ],
+                ),
+                if (_lastInferError != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF5B3A00).withValues(alpha: 0.72),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      _lastInferError!,
+                      style: const TextStyle(
+                        color: Color(0xFFFFD79A),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 14),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _latestResult == null ? null : _openLocalResult,
+                    onPressed: latest == null ? null : _openLocalResult,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.leafGreen,
                       foregroundColor: AppColors.white,
+                      minimumSize: const Size(double.infinity, 52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
                     ),
                     child: Text(t.t('scan_open_result')),
                   ),
@@ -475,7 +723,137 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
             ),
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildGuideFrame(AppLocalizations t) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 250,
+            height: 320,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1.2,
+                    ),
+                  ),
+                ),
+                _guideCorner(
+                  alignment: Alignment.topLeft,
+                  border: const Border(
+                    top: BorderSide(color: AppColors.white, width: 4),
+                    left: BorderSide(color: AppColors.white, width: 4),
+                  ),
+                ),
+                _guideCorner(
+                  alignment: Alignment.topRight,
+                  border: const Border(
+                    top: BorderSide(color: AppColors.white, width: 4),
+                    right: BorderSide(color: AppColors.white, width: 4),
+                  ),
+                ),
+                _guideCorner(
+                  alignment: Alignment.bottomLeft,
+                  border: const Border(
+                    bottom: BorderSide(color: AppColors.white, width: 4),
+                    left: BorderSide(color: AppColors.white, width: 4),
+                  ),
+                ),
+                _guideCorner(
+                  alignment: Alignment.bottomRight,
+                  border: const Border(
+                    bottom: BorderSide(color: AppColors.white, width: 4),
+                    right: BorderSide(color: AppColors.white, width: 4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.34),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              t.t('scan_center_guide'),
+              style: const TextStyle(
+                color: AppColors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _guideCorner({required Alignment alignment, required Border border}) {
+    return Align(
+      alignment: alignment,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(border: border),
+      ),
+    );
+  }
+
+  Widget _cameraPill({
+    required IconData icon,
+    required String label,
+    Color accent = AppColors.white,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: accent),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cameraMetaChip(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        '$label: $value',
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

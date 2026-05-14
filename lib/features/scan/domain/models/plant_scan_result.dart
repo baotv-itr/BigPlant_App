@@ -13,6 +13,17 @@ class PlantScanResult {
     required this.distributionAreas,
     required this.distributionPoints,
     this.confidence,
+    this.aliases = '',
+    this.habitat = '',
+    this.morphology = '',
+    this.characteristics = '',
+    this.lightRequirement = '',
+    this.waterRequirement = '',
+    this.soilPreference = '',
+    this.toxicity = '',
+    this.growthHabit = '',
+    this.seasonality = '',
+    this.sourceQuality = '',
   });
 
   final String displayName;
@@ -28,6 +39,17 @@ class PlantScanResult {
   final List<String> distributionAreas;
   final List<PlantDistributionPoint> distributionPoints;
   final double? confidence;
+  final String aliases;
+  final String habitat;
+  final String morphology;
+  final String characteristics;
+  final String lightRequirement;
+  final String waterRequirement;
+  final String soilPreference;
+  final String toxicity;
+  final String growthHabit;
+  final String seasonality;
+  final String sourceQuality;
 
   factory PlantScanResult.fromApi(Map<String, dynamic> json) {
     final payload = _toMap(
@@ -100,6 +122,95 @@ class PlantScanResult {
       ),
       confidence: _asDouble(
         _pickValue(source, const ['confidence', 'score', 'probability']),
+      ),
+      aliases: _stringOrEmpty(
+        _pickValue(source, const [
+          'aliases',
+          'alias',
+          'synonyms',
+          'other_names',
+          'ten_khac',
+        ]),
+      ),
+      habitat: _stringOrEmpty(
+        _pickValue(source, const [
+          'habitat',
+          'environment',
+          'native_habitat',
+          'moi_truong_song',
+        ]),
+      ),
+      morphology: _stringOrEmpty(
+        _pickValue(source, const [
+          'morphology',
+          'appearance',
+          'plant_form',
+          'dac_diem_hinh_thai',
+        ]),
+      ),
+      characteristics: _stringOrEmpty(
+        _pickValue(source, const [
+          'characteristics',
+          'traits',
+          'features',
+          'dac_diem',
+        ]),
+      ),
+      lightRequirement: _stringOrEmpty(
+        _pickValue(source, const [
+          'light',
+          'light_requirement',
+          'sunlight',
+          'anh_sang',
+        ]),
+      ),
+      waterRequirement: _stringOrEmpty(
+        _pickValue(source, const [
+          'water',
+          'water_requirement',
+          'watering',
+          'nuoc',
+        ]),
+      ),
+      soilPreference: _stringOrEmpty(
+        _pickValue(source, const [
+          'soil',
+          'soil_preference',
+          'soil_type',
+          'dat_trong',
+        ]),
+      ),
+      toxicity: _stringOrEmpty(
+        _pickValue(source, const [
+          'toxicity',
+          'toxicity_level',
+          'pet_safety',
+          'doc_tinh',
+        ]),
+      ),
+      growthHabit: _stringOrEmpty(
+        _pickValue(source, const [
+          'growth_habit',
+          'growth',
+          'habit',
+          'dang_sinh_truong',
+        ]),
+      ),
+      seasonality: _stringOrEmpty(
+        _pickValue(source, const [
+          'seasonality',
+          'season',
+          'blooming_season',
+          'mua_vu',
+        ]),
+      ),
+      sourceQuality: _stringOrEmpty(
+        _pickValue(source, const [
+          'source_quality',
+          'data_quality',
+          'reference_quality',
+          'do_tin_cay',
+        ]),
       ),
       note: _stringOrEmpty(noteRaw),
       distributionAreas: areas,
