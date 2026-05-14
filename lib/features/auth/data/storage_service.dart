@@ -6,8 +6,13 @@ class StorageService {
   static const _userNameKey = 'user_name';
   static const _fullNameKey = 'full_name';
   static const _emailKey = 'email';
+  static const _phoneNumberKey = 'phone_number';
+  static const _dateOfBirthKey = 'date_of_birth';
+  static const _genderKey = 'gender';
   static const _languageKey = 'language_code';
   static const _scanLocalModelKey = 'scan.local.selected_model';
+  static const _notifyDealsKey = 'settings.notify_deals';
+  static const _notifyPlantTipsKey = 'settings.notify_plant_tips';
 
   static Future<void> saveAuth({
     required String token,
@@ -22,6 +27,9 @@ class StorageService {
     String? userName,
     String? fullName,
     String? email,
+    String? phoneNumber,
+    String? dateOfBirth,
+    String? gender,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     if (userName != null) {
@@ -32,6 +40,15 @@ class StorageService {
     }
     if (email != null) {
       await prefs.setString(_emailKey, email);
+    }
+    if (phoneNumber != null) {
+      await prefs.setString(_phoneNumberKey, phoneNumber);
+    }
+    if (dateOfBirth != null) {
+      await prefs.setString(_dateOfBirthKey, dateOfBirth);
+    }
+    if (gender != null) {
+      await prefs.setString(_genderKey, gender);
     }
   }
 
@@ -60,6 +77,21 @@ class StorageService {
     return prefs.getString(_emailKey);
   }
 
+  static Future<String?> getPhoneNumber() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_phoneNumberKey);
+  }
+
+  static Future<String?> getDateOfBirth() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_dateOfBirthKey);
+  }
+
+  static Future<String?> getGender() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_genderKey);
+  }
+
   static Future<void> clearAuth() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
@@ -67,6 +99,9 @@ class StorageService {
     await prefs.remove(_userNameKey);
     await prefs.remove(_fullNameKey);
     await prefs.remove(_emailKey);
+    await prefs.remove(_phoneNumberKey);
+    await prefs.remove(_dateOfBirthKey);
+    await prefs.remove(_genderKey);
   }
 
   static Future<void> setLanguageCode(String code) async {
@@ -87,5 +122,25 @@ class StorageService {
   static Future<String?> getScanLocalModel() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_scanLocalModelKey);
+  }
+
+  static Future<void> setNotifyDeals(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notifyDealsKey, value);
+  }
+
+  static Future<bool> getNotifyDeals() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_notifyDealsKey) ?? true;
+  }
+
+  static Future<void> setNotifyPlantTips(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notifyPlantTipsKey, value);
+  }
+
+  static Future<bool> getNotifyPlantTips() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_notifyPlantTipsKey) ?? true;
   }
 }
