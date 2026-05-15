@@ -6,7 +6,7 @@ import '../../../../core/constants/app_globals.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/localization/locale_controller.dart';
 
-const String floraScanLogoAsset = 'assets/branding/florascan_logo.png';
+const String bigPlantLogoAsset = 'assets/branding/bigplant_logo.png';
 
 class AuthLayout extends StatelessWidget {
   const AuthLayout({
@@ -217,7 +217,7 @@ class AuthLogoMark extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(size * 0.22),
       child: Image.asset(
-        floraScanLogoAsset,
+        bigPlantLogoAsset,
         width: size,
         height: size,
         fit: BoxFit.contain,

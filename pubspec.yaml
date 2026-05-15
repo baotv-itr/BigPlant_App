@@ -70,7 +70,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/branding/florascan_logo.png
+    - assets/branding/bigplant_logo.png
     - assets/ml/configs/model_catalog.json
     - assets/ml/configs/runtime_policy.json
     - assets/ml/models/organ_aware_switch_vit/model.onnx
