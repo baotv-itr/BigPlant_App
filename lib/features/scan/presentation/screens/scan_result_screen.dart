@@ -94,7 +94,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       return apiBackend;
     }
     
-    return 'FloraEngine v1.0';
+    return 'TensorRT';
   }
 
   Future<void> _fetchDetailsFromApi() async {
@@ -758,7 +758,6 @@ class _HeroSection extends StatelessWidget {
                     title,
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       color: AppColors.white,
-                      fontStyle: FontStyle.italic,
                       fontSize: 40,
                       height: 1.1,
                       shadows: [
@@ -837,7 +836,7 @@ class _HeroChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
       decoration: BoxDecoration(
         color: dark ? Colors.white.withValues(alpha: 0.1) : AppColors.primary,
         borderRadius: BorderRadius.circular(999),
@@ -856,6 +855,7 @@ class _HeroChip extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: AppColors.white,
+              fontSize: 13,
             ),
           ),
         ],

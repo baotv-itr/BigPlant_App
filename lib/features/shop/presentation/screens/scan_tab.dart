@@ -51,7 +51,7 @@ class _ScanTabState extends State<ScanTab> {
           builder: (_) => ScanResultScreen(
             imageBytes: bytes,
             result: result,
-            inferenceFramework: 'FloraEngine v1.0',
+            inferenceFramework: 'TensorRT',
           ),
         ),
       );

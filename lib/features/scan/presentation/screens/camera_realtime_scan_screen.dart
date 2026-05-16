@@ -347,7 +347,7 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
           builder: (_) => ScanResultScreen(
             imageBytes: bytes,
             result: result,
-            inferenceFramework: 'FloraEngine v1.0',
+            inferenceFramework: 'TensorRT',
           ),
         ),
       );
@@ -426,7 +426,7 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
               fetchDetailsFromApi: true,
               detailFetchFileName: detailFetchFileName,
               plantLabel: prediction.label,
-              inferenceFramework: 'FloraEngine v1.0',
+              inferenceFramework: 'ONNX Runtime',
             ),
           ),
         )
