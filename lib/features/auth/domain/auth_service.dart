@@ -20,6 +20,9 @@ class AuthService {
         userName: user['user_name']?.toString(),
         fullName: user['full_name']?.toString(),
         email: user['email']?.toString(),
+        phoneNumber: user['phone_number']?.toString(),
+        dateOfBirth: user['date_of_birth']?.toString(),
+        gender: user['gender']?.toString(),
       );
     }
   }
@@ -112,6 +115,9 @@ class AuthService {
             userName: user['user_name']?.toString(),
             fullName: user['full_name']?.toString(),
             email: user['email']?.toString(),
+            phoneNumber: user['phone_number']?.toString(),
+            dateOfBirth: user['date_of_birth']?.toString(),
+            gender: user['gender']?.toString(),
           );
         }
         return true;

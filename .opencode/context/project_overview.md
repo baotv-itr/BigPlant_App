@@ -54,6 +54,25 @@
 
 ## Current status notes
 - Localization `vi/en` dang duoc duy tri, scan da them key cho realtime screen.
+- Scan UI da duoc doi theo Stitch flow moi:
+  - `Scan Tab`
+  - `Scanning Tab - Pending`
+  - `Scanning Tab - Complete`
+  - `Plant Detail Tab`
+  - `Plant Detail Tab - Distribution`
+  - `Plant Detail Tab - Distribution Map`
+- Flutter boundary hien tai van giu nguyen logic:
+  - `ScanTab` vao camera hoac gallery.
+  - Camera realtime van infer local ONNX.
+  - Sau capture moi mo `Plant Detail` qua CTA `Open Full Analysis`.
+  - `Plant Detail` van co enrich du lieu bang backend API khi can.
+- Shop UI da bat dau doi theo Stitch cho `Home Tab` va `Product Detail`.
+- Vi source hien tai chua co API shop/catalog, Flutter dang dung local catalog bám schema DB:
+  - `product_categories`
+  - `products`
+  - `product_variants`
+  - `product_images`
+  - linked plant snapshot qua `plant_id`
 - `flutter analyze` va `flutter test` pass sau khi them ONNX + camera.
 - APK debug rat lon do bundle nhieu ONNX files (~600MB), can quan tri release strategy.
 - ONNX realtime da chot yeu cau tensor float32; neu dua tensor double se fail voi loi `Unexpected input data type`.
