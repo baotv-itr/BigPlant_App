@@ -276,25 +276,12 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                     color: AppColors.onSurfaceVariant,
                                     height: 1.5,
-                                    fontSize: 14,
+                                    fontSize: 15,
                                   ),
                             ),
                           ))
                       .toList(),
                 ),
-              ),
-              const SizedBox(height: 24),
-              _EvidenceSafetyCard(plant: plant),
-              const SizedBox(height: 24),
-              _TechnicalMetadataCard(
-                expanded: _technicalExpanded,
-                title: t.t('plant_section_technical'),
-                metadata: _technicalMetadataText(plant),
-                onToggle: () {
-                  setState(() {
-                    _technicalExpanded = !_technicalExpanded;
-                  });
-                },
               ),
               const SizedBox(height: 24),
               _PlantSectionCard(
@@ -307,12 +294,25 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              _EvidenceSafetyCard(plant: plant),
+              const SizedBox(height: 24),
               _UtilityBenefitsCard(items: _benefitItems(t, plant)),
               const SizedBox(height: 24),
               _DistributionCard(
                 plant: plant,
                 onOpenMap: () => _openExpandedMap(context),
                 onOpenDetails: () => _showDistributionDetails(context),
+              ),
+              const SizedBox(height: 24),
+              _TechnicalMetadataCard(
+                expanded: _technicalExpanded,
+                title: t.t('plant_section_technical'),
+                metadata: _technicalMetadataText(plant),
+                onToggle: () {
+                  setState(() {
+                    _technicalExpanded = !_technicalExpanded;
+                  });
+                },
               ),
             ],
           ),
@@ -1090,7 +1090,7 @@ class _DangerInfoCard extends StatelessWidget {
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: AppColors.onSurfaceVariant,
                                 height: 1.6,
-                                fontSize: 13,
+                                fontSize: 14,
                               ),
                             ),
                           ),
@@ -1106,7 +1106,7 @@ class _DangerInfoCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.onSurfaceVariant,
                 height: 1.6,
-                fontSize: 13,
+                fontSize: 14,
               ),
             ),
         ],
