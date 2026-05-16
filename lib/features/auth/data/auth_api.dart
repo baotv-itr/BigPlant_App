@@ -91,4 +91,23 @@ class AuthApi {
       body: {'email': email, 'otp': otp, 'newPassword': newPassword},
     );
   }
+
+  Future<Map<String, dynamic>> updateProfile({
+    required String token,
+    String? fullName,
+    String? phoneNumber,
+    String? dateOfBirth,
+    String? gender,
+  }) {
+    return _client.put(
+      '${ApiConstants.baseUrl}api/auth/update-profile',
+      headers: {'Authorization': 'Bearer $token'},
+      body: {
+        if (fullName != null) 'full_name': fullName,
+        if (phoneNumber != null) 'phone_number': phoneNumber,
+        if (dateOfBirth != null) 'date_of_birth': dateOfBirth,
+        if (gender != null) 'gender': gender,
+      },
+    );
+  }
 }
