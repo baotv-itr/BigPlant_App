@@ -82,14 +82,19 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     final explicit = widget.inferenceFramework?.trim() ?? '';
     if (explicit.isNotEmpty) return explicit;
     
-    final apiBackend = _contentResult.backend?.trim() ?? '';
+    final initialBackend = widget.result.backend?.trim() ?? '';
+    if (initialBackend.isNotEmpty) {
+      if (initialBackend.toLowerCase() == 'tensorrt') return 'TensorRT';
+      return initialBackend;
+    }
+    
+    final apiBackend = _fetchedDetails?.backend?.trim() ?? '';
     if (apiBackend.isNotEmpty) {
-      // Prettify backend name if needed (e.g., tensorrt -> TensorRT)
       if (apiBackend.toLowerCase() == 'tensorrt') return 'TensorRT';
       return apiBackend;
     }
     
-    return widget.fetchDetailsFromApi ? 'FloraEngine v1.0' : 'FloraEngine v1.0';
+    return 'FloraEngine v1.0';
   }
 
   Future<void> _fetchDetailsFromApi() async {
@@ -253,8 +258,8 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 title: _primaryDisplayTitle(plant),
                 subtitle: _secondaryDisplayTitle(plant),
                 frameworkLabel: _frameworkLabel,
-                modelLabel: _contentResult.modelName,
-                confidence: plant.confidence,
+                modelLabel: widget.result.modelName ?? _fetchedDetails?.modelName,
+                confidence: widget.result.confidence ?? _fetchedDetails?.confidence,
               ),
               const SizedBox(height: 24),
               if (_fetchingDetails) ...[
@@ -792,12 +797,13 @@ class _HeroSection extends StatelessWidget {
                         label: frameworkLabel,
                         dark: true,
                       ),
-                      if (modelLabel != null && modelLabel!.isNotEmpty)
-                        _HeroChip(
-                          icon: Icons.psychology,
-                          label: modelLabel!,
-                          dark: true,
-                        ),
+                      _HeroChip(
+                        icon: Icons.psychology,
+                        label: (modelLabel != null && modelLabel!.isNotEmpty)
+                            ? modelLabel!
+                            : 'Standard Model',
+                        dark: true,
+                      ),
                       _HeroChip(
                         icon: Icons.verified,
                         label: confidence == null

@@ -410,6 +410,8 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
       safetyNotes: '',
       evidenceLevel: '',
       confidence: prediction.confidence,
+      modelName: prediction.modelId,
+      backend: 'ONNX Runtime',
       distributionAreas: const [],
       distributionPoints: const [],
       note: 'Local ONNX model: ${prediction.modelId}\nTop-5:\n$topkText',
