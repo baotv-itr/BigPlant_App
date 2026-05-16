@@ -92,23 +92,45 @@ class _ScanTabState extends State<ScanTab> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 120),
           children: [
-            RichText(
-              text: TextSpan(
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: AppColors.primary,
-                ),
-                children: [
-                  TextSpan(text: t.t('scan_intro_title_line_1')),
-                  TextSpan(
-                    text: '\n${t.t('scan_intro_title_line_2')}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: AppColors.secondary,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.w400,
-                    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondaryContainer,
+                    shape: BoxShape.circle,
                   ),
-                ],
-              ),
+                  child: const Icon(
+                    Icons.energy_savings_leaf_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.t('scan_intro_title_line_1'),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.secondary,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    Text(
+                      t.t('scan_intro_title_line_2'),
+                      style: theme.textTheme.headlineLarge?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
             const SizedBox(height: 28),
             _PreviewCard(
