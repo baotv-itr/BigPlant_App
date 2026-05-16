@@ -17,6 +17,7 @@ class ScanResultScreen extends StatefulWidget {
     required this.result,
     this.fetchDetailsFromApi = false,
     this.detailFetchFileName = 'camera_scan.jpg',
+    this.plantLabel,
     this.inferenceFramework,
     super.key,
   });
@@ -25,6 +26,7 @@ class ScanResultScreen extends StatefulWidget {
   final PlantScanResult result;
   final bool fetchDetailsFromApi;
   final String detailFetchFileName;
+  final String? plantLabel;
   final String? inferenceFramework;
 
   static String valueOrPlaceholder(String value) {
@@ -96,10 +98,12 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       _fetchError = null;
     });
     try {
-      final apiResult = await _scanService.scanPlant(
-        imageBytes: widget.imageBytes,
-        fileName: widget.detailFetchFileName,
-      );
+      final apiResult = widget.plantLabel != null && widget.plantLabel!.isNotEmpty
+          ? await _scanService.scanPlantByLabel(label: widget.plantLabel!)
+          : await _scanService.scanPlant(
+              imageBytes: widget.imageBytes,
+              fileName: widget.detailFetchFileName,
+            );
       if (!mounted) return;
       setState(() {
         _fetchedDetails = apiResult;

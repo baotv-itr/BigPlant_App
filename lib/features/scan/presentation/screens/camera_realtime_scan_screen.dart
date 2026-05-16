@@ -423,6 +423,7 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
               result: result,
               fetchDetailsFromApi: true,
               detailFetchFileName: detailFetchFileName,
+              plantLabel: prediction.label,
               inferenceFramework: 'FloraEngine v1.0',
             ),
           ),
