@@ -281,6 +281,8 @@ class AppLocalizations {
       'auth_success_title': 'Success!',
       'auth_back_to_login': 'Back to Login',
       'auth_loading': 'Loading...',
+      'scan_success_title': 'Plant Identified',
+      'scan_success_badge': 'IDENTIFIED',
     },
     'vi': {
       'app_name': 'BigPlant',
@@ -559,6 +561,8 @@ class AppLocalizations {
       'auth_success_title': 'Thành công!',
       'auth_back_to_login': 'Quay lại Đăng nhập',
       'auth_loading': 'Loading...',
+      'scan_success_title': 'Đã nhận diện được cây',
+      'scan_success_badge': 'THÀNH CÔNG',
     },
   };
 

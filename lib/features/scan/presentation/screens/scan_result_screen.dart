@@ -44,6 +44,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   bool _ttsReady = false;
   bool _fetchingDetails = false;
   bool _technicalExpanded = false;
+  bool _successBannerVisible = false;
   String? _fetchError;
   PlantScanResult? _fetchedDetails;
 
@@ -54,12 +55,23 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     if (widget.fetchDetailsFromApi) {
       _fetchDetailsFromApi();
     }
+    _showSuccessBanner();
   }
 
   @override
   void dispose() {
     _tts.stop();
     super.dispose();
+  }
+
+  void _showSuccessBanner() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _successBannerVisible = true);
+      Future.delayed(const Duration(milliseconds: 3000), () {
+        if (mounted) setState(() => _successBannerVisible = false);
+      });
+    });
   }
 
   PlantScanResult get _contentResult => _fetchedDetails ?? widget.result;
@@ -296,6 +308,15 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
             title: t.t('plant_report_title'),
             onBack: () => Navigator.of(context).pop(),
             onShare: _sharePlantDetail,
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _ScanSuccessBanner(
+              visible: _successBannerVisible,
+              plantName: _primaryDisplayTitle(plant),
+            ),
           ),
         ],
       ),
@@ -1796,6 +1817,115 @@ class _MapChip extends StatelessWidget {
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: AppColors.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+class _ScanSuccessBanner extends StatelessWidget {
+  const _ScanSuccessBanner({
+    required this.visible,
+    required this.plantName,
+  });
+
+  final bool visible;
+  final String plantName;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: AnimatedSlide(
+        offset: visible ? Offset.zero : const Offset(0, -1.5),
+        duration: const Duration(milliseconds: 420),
+        curve: visible ? Curves.easeOutBack : Curves.easeInCubic,
+        child: AnimatedOpacity(
+          opacity: visible ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 300),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0F5238), Color(0xFF2D6A4F)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0F5238).withValues(alpha: 0.35),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context).t('scan_success_title'),
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          plantName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      AppLocalizations.of(context).t('scan_success_badge'),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
