@@ -263,12 +263,23 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 title: t.t('plant_section_ecology'),
                 icon: Icons.eco,
                 source: plant.sourceForField('description'),
-                child: Text(
-                  ScanResultScreen.valueOrPlaceholder(plant.description),
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    height: 1.8,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: ScanResultScreen.valueOrPlaceholder(plant.description)
+                      .split('\n')
+                      .map((line) => line.trim())
+                      .where((line) => line.isNotEmpty)
+                      .map((line) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              line,
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: AppColors.onSurfaceVariant,
+                                    height: 1.5,
+                                  ),
+                            ),
+                          ))
+                      .toList(),
                 ),
               ),
               const SizedBox(height: 24),
@@ -1405,13 +1416,25 @@ class _BenefitTile extends StatelessWidget {
               Icon(item.icon, color: AppColors.white),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  item.description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    height: 1.5,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: item.description
+                        .split('\n')
+                        .map((line) => line.trim())
+                        .where((line) => line.isNotEmpty)
+                        .map((line) => Padding(
+                              padding: const EdgeInsets.only(bottom: 7),
+                              child: Text(
+                                line,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                      height: 1.5,
+                                      fontSize: 13,
+                                    ),
+                              ),
+                            ))
+                        .toList(),
                   ),
-                ),
               ),
             ],
           ),
