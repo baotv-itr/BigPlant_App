@@ -7,26 +7,26 @@ class AppTheme {
   static ThemeData light() {
     final base = ThemeData.light();
     final textTheme = GoogleFonts.beVietnamProTextTheme(base.textTheme).copyWith(
-      displayLarge: GoogleFonts.playfairDisplay(
+      displayLarge: GoogleFonts.dmSans(
         fontSize: 48,
         height: 56 / 48,
         fontWeight: FontWeight.w700,
         letterSpacing: 0,
         color: AppColors.primary,
       ),
-      headlineLarge: GoogleFonts.playfairDisplay(
+      headlineLarge: GoogleFonts.dmSans(
         fontSize: 32,
         height: 40 / 32,
         fontWeight: FontWeight.w700,
         color: AppColors.primary,
       ),
-      headlineMedium: GoogleFonts.playfairDisplay(
+      headlineMedium: GoogleFonts.dmSans(
         fontSize: 24,
         height: 32 / 24,
         fontWeight: FontWeight.w600,
         color: AppColors.primary,
       ),
-      titleLarge: GoogleFonts.playfairDisplay(
+      titleLarge: GoogleFonts.dmSans(
         fontSize: 28,
         height: 36 / 28,
         fontWeight: FontWeight.w700,

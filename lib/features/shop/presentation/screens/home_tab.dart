@@ -209,6 +209,7 @@ class _HomeTabState extends State<HomeTab> {
                             t.t('home_search_hint'),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: AppColors.outline,
+                              fontSize: 16,
                             ),
                           ),
                         ),

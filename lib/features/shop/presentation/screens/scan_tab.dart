@@ -422,7 +422,7 @@ class _TipsCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontSize: 24,
+                    fontSize: 20,
                     color: AppColors.primary,
                   ),
                 ),
