@@ -55,6 +55,8 @@ class _ScanTabState extends State<ScanTab> {
           ),
         ),
       );
+      // Xoá ảnh preview khi quay về
+      if (mounted) setState(() => _previewBytes = null);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

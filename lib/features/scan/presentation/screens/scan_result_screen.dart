@@ -1849,14 +1849,14 @@ class _ScanSuccessBanner extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0F5238), Color(0xFF2D6A4F)],
+                  colors: [Color.fromARGB(255, 30, 134, 85), Color(0xFF25A26A)],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0F5238).withValues(alpha: 0.35),
+                    color: const Color(0xFF25A26A).withValues(alpha: 0.40),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
