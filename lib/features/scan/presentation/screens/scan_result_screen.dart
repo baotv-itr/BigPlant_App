@@ -906,6 +906,7 @@ class _SourceBadge extends StatelessWidget {
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: AppColors.primary,
           fontWeight: FontWeight.w800,
+          fontSize: 10,
           letterSpacing: 0.5,
         ),
       ),
@@ -1241,7 +1242,7 @@ class _TaxonomyRow extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w800,
-                      fontSize: 10,
+                      fontSize: 9,
                     ),
                   ),
                 ],
@@ -1348,12 +1349,19 @@ class _BenefitTile extends StatelessWidget {
                 ),
               ),
               if (item.source.trim().isNotEmpty)
-                Text(
-                  item.source.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 10,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(210, 255, 255, 255),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    item.source.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 10,
+                    ),
                   ),
                 ),
             ],
