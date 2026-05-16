@@ -276,6 +276,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                     color: AppColors.onSurfaceVariant,
                                     height: 1.5,
+                                    fontSize: 14,
                                   ),
                             ),
                           ))
@@ -1089,6 +1090,7 @@ class _DangerInfoCard extends StatelessWidget {
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: AppColors.onSurfaceVariant,
                                 height: 1.6,
+                                fontSize: 13,
                               ),
                             ),
                           ),
@@ -1104,6 +1106,7 @@ class _DangerInfoCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.onSurfaceVariant,
                 height: 1.6,
+                fontSize: 13,
               ),
             ),
         ],
