@@ -694,13 +694,16 @@ class _HeroSection extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Image.memory(imageBytes, fit: BoxFit.cover),
-            const DecoratedBox(
+            DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0xCC000000)],
-                  stops: [0.35, 1],
+                  colors: [
+                    Colors.black.withValues(alpha: 0.2),
+                    Colors.black.withValues(alpha: 0.85),
+                  ],
+                  stops: const [0.0, 1.0],
                 ),
               ),
             ),
@@ -713,10 +716,18 @@ class _HeroSection extends StatelessWidget {
                 children: [
                   if (familyLabel.trim().isNotEmpty)
                     Text(
-                      '$familyLabel Family',
+                      '${familyLabel.toUpperCase()} FAMILY',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: AppColors.primaryFixed,
                         letterSpacing: 2.8,
+                        fontWeight: FontWeight.w800,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                     ),
                   const SizedBox(height: 4),
@@ -727,14 +738,28 @@ class _HeroSection extends StatelessWidget {
                       fontStyle: FontStyle.italic,
                       fontSize: 40,
                       height: 1.1,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                   ),
                   if (subtitle.trim().isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 12),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.white.withValues(alpha: 0.8),
+                        color: AppColors.white.withValues(alpha: 0.9),
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                     ),
                   ],
