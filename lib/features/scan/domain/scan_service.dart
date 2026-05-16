@@ -41,6 +41,8 @@ class ScanService {
       evidenceLevel: result.evidenceLevel,
       source: result.source,
       confidence: result.confidence,
+      modelName: result.modelName,
+      backend: result.backend,
       distributionAreas: result.distributionAreas,
       distributionPoints: result.distributionPoints,
       note: const JsonEncoder.withIndent('  ').convert(response),

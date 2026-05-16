@@ -79,6 +79,14 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   String get _frameworkLabel {
     final explicit = widget.inferenceFramework?.trim() ?? '';
     if (explicit.isNotEmpty) return explicit;
+    
+    final apiBackend = _contentResult.backend?.trim() ?? '';
+    if (apiBackend.isNotEmpty) {
+      // Prettify backend name if needed (e.g., tensorrt -> TensorRT)
+      if (apiBackend.toLowerCase() == 'tensorrt') return 'TensorRT';
+      return apiBackend;
+    }
+    
     return widget.fetchDetailsFromApi ? 'FloraEngine v1.0' : 'FloraEngine v1.0';
   }
 
@@ -241,6 +249,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 title: _primaryDisplayTitle(plant),
                 subtitle: _secondaryDisplayTitle(plant),
                 frameworkLabel: _frameworkLabel,
+                modelLabel: _contentResult.modelName,
                 confidence: plant.confidence,
               ),
               const SizedBox(height: 24),
@@ -677,6 +686,7 @@ class _HeroSection extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.frameworkLabel,
+    this.modelLabel,
     required this.confidence,
   });
 
@@ -685,6 +695,7 @@ class _HeroSection extends StatelessWidget {
   final String title;
   final String subtitle;
   final String frameworkLabel;
+  final String? modelLabel;
   final double? confidence;
 
   @override
@@ -777,6 +788,12 @@ class _HeroSection extends StatelessWidget {
                         label: frameworkLabel,
                         dark: true,
                       ),
+                      if (modelLabel != null && modelLabel!.isNotEmpty)
+                        _HeroChip(
+                          icon: Icons.psychology,
+                          label: modelLabel!,
+                          dark: true,
+                        ),
                       _HeroChip(
                         icon: Icons.verified,
                         label: confidence == null

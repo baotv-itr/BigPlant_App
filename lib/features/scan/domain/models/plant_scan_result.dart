@@ -20,6 +20,8 @@ class PlantScanResult {
     required this.distributionAreas,
     required this.distributionPoints,
     this.confidence,
+    this.modelName,
+    this.backend,
   });
 
   final String displayName;
@@ -42,6 +44,8 @@ class PlantScanResult {
   final List<String> distributionAreas;
   final List<PlantDistributionPoint> distributionPoints;
   final double? confidence;
+  final String? modelName;
+  final String? backend;
 
   String sourceForField(String fieldKey) {
     final raw = source[fieldKey]?.trim() ?? '';
@@ -141,7 +145,14 @@ class PlantScanResult {
         ]),
       ),
       confidence: _asDouble(
-        _pickValue(source, const ['confidence', 'score', 'probability']),
+        _pickValue(_toMap(json['detect_result']?['pred']), const ['confidence', 'score', 'probability']) ??
+            _pickValue(source, const ['confidence', 'score', 'probability']),
+      ),
+      modelName: _stringOrEmpty(
+        _pickValue(_toMap(json['detect_result']?['meta']?['model']), const ['model_name', 'name']),
+      ),
+      backend: _stringOrEmpty(
+        _pickValue(_toMap(json['detect_result']?['meta']?['model']), const ['backend', 'framework']),
       ),
       toxicityWarning: _stringOrEmpty(
         _pickValue(source, const ['toxicity_warning', 'toxicity_warning_text']),
