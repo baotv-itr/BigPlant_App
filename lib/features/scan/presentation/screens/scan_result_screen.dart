@@ -1207,46 +1207,40 @@ class _TaxonomyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              item.label.toUpperCase(),
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                item.label.toUpperCase(),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Wrap(
-              alignment: WrapAlignment.end,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
+              if (item.source.trim().isNotEmpty)
                 Text(
-                  item.value,
-                  textAlign: TextAlign.right,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.onSurface,
-                    fontWeight: FontWeight.w600,
-                    fontStyle: item.italic ? FontStyle.italic : FontStyle.normal,
+                  item.source.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 9,
                   ),
                 ),
-                if (item.source.trim().isNotEmpty) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    item.source.toUpperCase(),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 9,
-                    ),
-                  ),
-                ],
-              ],
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            item.value,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: AppColors.onSurface,
+              fontWeight: FontWeight.w600,
+              fontStyle: item.italic ? FontStyle.italic : FontStyle.normal,
+              fontSize: 16,
             ),
           ),
         ],
