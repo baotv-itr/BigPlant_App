@@ -409,7 +409,6 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
       toxicityWarning: '',
       safetyNotes: '',
       evidenceLevel: '',
-      source: '',
       confidence: prediction.confidence,
       distributionAreas: const [],
       distributionPoints: const [],
