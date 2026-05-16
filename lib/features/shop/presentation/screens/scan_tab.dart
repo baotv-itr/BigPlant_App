@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -418,15 +417,13 @@ class _TipsCard extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.tips_and_updates, color: AppColors.secondary),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
-                  style: GoogleFonts.beVietnamPro(
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontSize: 20,
-                    fontWeight: FontWeight.w700,
                     color: AppColors.primary,
-                    height: 1.3,
                   ),
                 ),
               ),

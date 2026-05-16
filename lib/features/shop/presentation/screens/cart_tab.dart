@@ -19,7 +19,7 @@ class CartTab extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           const _CartItemTile(
-            name: 'Monstera Deliciosa',
+            name: 'Monstera Planto',
             variant: '18cm pot',
             price: 32.0,
             quantity: 1,
@@ -105,7 +105,10 @@ class _CartItemTile extends StatelessWidget {
               children: [
                 Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 2),
-                Text(variant, style: const TextStyle(color: AppColors.darkGrey)),
+                Text(
+                  variant,
+                  style: const TextStyle(color: AppColors.darkGrey),
+                ),
               ],
             ),
           ),
@@ -121,7 +124,10 @@ class _CartItemTile extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.cardBorder),
@@ -156,7 +162,10 @@ class _PriceRow extends StatelessWidget {
     );
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [Text(label, style: style), Text(value, style: style)],
+      children: [
+        Text(label, style: style),
+        Text(value, style: style),
+      ],
     );
   }
 }
