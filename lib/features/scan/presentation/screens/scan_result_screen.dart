@@ -233,7 +233,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       body: Stack(
         children: [
           ListView(
-            padding: const EdgeInsets.fromLTRB(24, 88, 24, 120),
+            padding: const EdgeInsets.fromLTRB(24, 100, 24, 120),
             children: [
               _HeroSection(
                 imageBytes: widget.imageBytes,
@@ -304,10 +304,15 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
               ),
             ],
           ),
-          _PlantDetailTopBar(
-            title: t.t('plant_report_title'),
-            onBack: () => Navigator.of(context).pop(),
-            onShare: _sharePlantDetail,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _PlantDetailTopBar(
+              title: t.t('plant_report_title'),
+              onBack: () => Navigator.of(context).pop(),
+              onShare: _sharePlantDetail,
+            ),
           ),
           Positioned(
             top: 0,
@@ -590,34 +595,36 @@ class _PlantDetailTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLow.withValues(alpha: 0.9),
-          border: Border(
-            bottom: BorderSide(
-              color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            _TopActionButton(icon: Icons.arrow_back, onTap: onBack),
-            Expanded(
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 24,
-                ),
+    return Container(
+      color: AppColors.surfaceContainerLow,
+      child: SafeArea(
+        bottom: false,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow,
+            border: Border(
+              bottom: BorderSide(
+                color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
               ),
             ),
-            _TopActionButton(icon: Icons.share, onTap: onShare),
-          ],
+          ),
+          child: Row(
+            children: [
+              _TopActionButton(icon: Icons.arrow_back, onTap: onBack),
+              Expanded(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+              _TopActionButton(icon: Icons.share, onTap: onShare),
+            ],
+          ),
         ),
       ),
     );
@@ -897,8 +904,9 @@ class _SourceBadge extends StatelessWidget {
       child: Text(
         source.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.onSurfaceVariant,
-          fontWeight: FontWeight.w700,
+          color: AppColors.primary,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
         ),
       ),
     );
@@ -931,28 +939,47 @@ class _EvidenceSafetyCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.secondaryContainer,
-              borderRadius: BorderRadius.circular(999),
+          if (plant.evidenceLevel.trim().isEmpty)
+            Text(
+              t.t('plant_evidence_unknown'),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: plant.evidenceLevel
+                  .split(';')
+                  .map((e) => e.trim())
+                  .where((e) => e.isNotEmpty)
+                  .map((e) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.fact_check, size: 16, color: AppColors.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              _prettyEnum(e),
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ))
+                  .toList(),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.fact_check, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  plant.evidenceLevel.trim().isEmpty
-                      ? t.t('plant_evidence_unknown')
-                      : _prettyEnum(plant.evidenceLevel),
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 20),
           if (plant.toxicityWarning.trim().isNotEmpty)
             _DangerInfoCard(
@@ -1207,14 +1234,17 @@ class _TaxonomyRow extends StatelessWidget {
                     fontStyle: item.italic ? FontStyle.italic : FontStyle.normal,
                   ),
                 ),
-                if (item.source.trim().isNotEmpty)
+                if (item.source.trim().isNotEmpty) ...[
+                  const SizedBox(width: 6),
                   Text(
-                    ' [${item.source.toLowerCase()}]',
+                    item.source.toUpperCase(),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.outline,
-                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
                     ),
                   ),
+                ],
               ],
             ),
           ),
@@ -1319,10 +1349,11 @@ class _BenefitTile extends StatelessWidget {
               ),
               if (item.source.trim().isNotEmpty)
                 Text(
-                  '[${item.source.toLowerCase()}]',
+                  item.source.toUpperCase(),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
                   ),
                 ),
             ],
