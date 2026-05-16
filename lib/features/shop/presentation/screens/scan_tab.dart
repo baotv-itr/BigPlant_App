@@ -112,6 +112,7 @@ class _ScanTabState extends State<ScanTab> {
             _PreviewCard(
               previewBytes: _previewBytes,
               idleMessage: t.t('scan_camera_hint'),
+              loading: _loading,
             ),
             const SizedBox(height: 24),
             _ActionButton(
@@ -127,17 +128,6 @@ class _ScanTabState extends State<ScanTab> {
               filled: false,
               onPressed: _loading ? null : _pickAndScanFromGallery,
             ),
-            if (_loading) ...[
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: const LinearProgressIndicator(
-                  minHeight: 6,
-                  color: AppColors.primary,
-                  backgroundColor: AppColors.primaryFixed,
-                ),
-              ),
-            ],
             const SizedBox(height: 40),
             _TipsCard(
               title: t.t('scan_tips_title'),
@@ -161,16 +151,59 @@ class _ScanTabState extends State<ScanTab> {
   }
 }
 
-class _PreviewCard extends StatelessWidget {
-  const _PreviewCard({required this.previewBytes, required this.idleMessage});
+class _PreviewCard extends StatefulWidget {
+  const _PreviewCard({
+    required this.previewBytes,
+    required this.idleMessage,
+    this.loading = false,
+  });
 
   final Uint8List? previewBytes;
   final String idleMessage;
+  final bool loading;
+
+  @override
+  State<_PreviewCard> createState() => _PreviewCardState();
+}
+
+class _PreviewCardState extends State<_PreviewCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animCtrl;
+  late final Animation<double> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _slideAnim = Tween<double>(begin: -0.33, end: 1.0).animate(
+      CurvedAnimation(parent: _animCtrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _PreviewCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.loading && !oldWidget.loading) {
+      _animCtrl.repeat();
+    } else if (!widget.loading && oldWidget.loading) {
+      _animCtrl.stop();
+      _animCtrl.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 3 / 4,
+      aspectRatio: 5 / 6,
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerLowest.withValues(alpha: 0.8),
@@ -189,8 +222,8 @@ class _PreviewCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (previewBytes != null)
-                Image.memory(previewBytes!, fit: BoxFit.cover)
+              if (widget.previewBytes != null)
+                Image.memory(widget.previewBytes!, fit: BoxFit.cover)
               else ...[
                 Positioned(
                   top: -48,
@@ -238,7 +271,7 @@ class _PreviewCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          idleMessage,
+                          widget.idleMessage,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppColors.onSurfaceVariant,
@@ -249,29 +282,37 @@ class _PreviewCard extends StatelessWidget {
                   ),
                 ),
               ],
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  height: 4,
-                  color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.33,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.primaryFixed, AppColors.primary],
-                        ),
-                        borderRadius: BorderRadius.horizontal(
-                          right: Radius.circular(999),
+              if (widget.loading)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    height: 4,
+                    color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
+                    child: AnimatedBuilder(
+                      animation: _slideAnim,
+                      builder: (context, child) {
+                        return FractionallySizedBox(
+                          alignment: Alignment(
+                            _slideAnim.value.clamp(-1.0, 1.0),
+                            0,
+                          ),
+                          widthFactor: 0.33,
+                          child: child,
+                        );
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [AppColors.primaryFixed, AppColors.primary],
+                          ),
+                          borderRadius: BorderRadius.all(Radius.circular(999)),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
