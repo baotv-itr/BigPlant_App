@@ -749,13 +749,13 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
   String _friendlyModelLabel(String? modelId) {
     switch (modelId) {
       case 'mobilenetv3large_segformer':
-        return 'Botanical-V2';
+        return 'MobileNetV3 Seg';
       case 'efficientnetv2_segformer':
-        return 'EcoLens-S';
+        return 'EfficientNetV2 Seg';
       case 'efficientnetv2_mask2former':
-        return 'Segment-Expert';
+        return 'EfficientNetV2 M2F';
       case 'organ_aware_switch_vit':
-        return 'FloraSwitch-ViT';
+        return 'Organ Aware ViT';
       default:
         return modelId ?? 'Botanical-V2';
     }
