@@ -39,7 +39,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     super.initState();
     _fullNameCtrl = TextEditingController(text: widget.fullName);
     _phoneCtrl = TextEditingController(text: widget.phoneNumber);
-    _gender = widget.gender.isEmpty ? 'unknown' : widget.gender;
+    _gender = (widget.gender.isEmpty || widget.gender == 'unknown') ? 'other' : widget.gender;
     _selectedDate = _parseDate(widget.dateOfBirth);
   }
 
@@ -488,7 +488,6 @@ class _EditUserScreenState extends State<EditUserScreen> {
       _GenderOption(value: 'male', label: t.t('settings_gender_male')),
       _GenderOption(value: 'female', label: t.t('settings_gender_female')),
       _GenderOption(value: 'other', label: t.t('settings_gender_other')),
-      _GenderOption(value: 'unknown', label: t.t('settings_gender_unknown')),
     ];
   }
 }

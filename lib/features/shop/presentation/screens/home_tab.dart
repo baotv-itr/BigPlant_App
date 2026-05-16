@@ -205,11 +205,18 @@ class _HomeTabState extends State<HomeTab> {
                         const Icon(Icons.search, color: AppColors.primary),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text(
-                            t.t('home_search_hint'),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.outline,
-                              fontSize: 16,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const NeverScrollableScrollPhysics(),
+                            child: Text(
+                              t.t('home_search_hint'),
+                              maxLines: 1,
+                              overflow: TextOverflow.fade,
+                              softWrap: false,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: AppColors.outline,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),
