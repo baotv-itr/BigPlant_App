@@ -28,7 +28,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
     ];
 
     final navItems = [
-      _NavItemData(icon: Icons.potted_plant, label: t.t('home_tab')),
+      _NavItemData(icon: Icons.local_florist, label: t.t('home_tab')),
       _NavItemData(icon: Icons.center_focus_strong, label: t.t('scan_tab')),
       _NavItemData(icon: Icons.shopping_bag_rounded, label: t.t('cart_tab')),
       _NavItemData(icon: Icons.settings_rounded, label: t.t('settings_tab')),

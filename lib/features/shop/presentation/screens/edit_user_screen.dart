@@ -655,7 +655,7 @@ class _StaticSettingsBottomBar extends StatelessWidget {
       child: AbsorbPointer(
         child: Row(
           children: const [
-            _StaticNavItem(icon: Icons.potted_plant, label: 'Home'),
+            _StaticNavItem(icon: Icons.local_florist, label: 'Home'),
             _StaticNavItem(icon: Icons.center_focus_strong, label: 'Scan'),
             _StaticNavItem(icon: Icons.shopping_bag, label: 'Cart'),
             _StaticNavItem(icon: Icons.settings, label: 'Settings', selected: true),
