@@ -352,7 +352,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
 
   String _secondaryDisplayTitle(PlantScanResult plant) {
     final common = plant.commonName.trim();
-    if (common.isNotEmpty) return common;
+    if (common.isNotEmpty) {
+      // Return only the first name if multiple are separated by semicolons
+      return common.split(';').first.trim();
+    }
     final display = plant.displayName.trim();
     if (display.isNotEmpty && display != plant.scientificName.trim()) {
       return display;
@@ -753,6 +756,7 @@ class _HeroSection extends StatelessWidget {
                       subtitle,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.white.withValues(alpha: 0.9),
+                        fontSize: 16,
                         shadows: [
                           Shadow(
                             color: Colors.black.withValues(alpha: 0.5),
@@ -763,7 +767,7 @@ class _HeroSection extends StatelessWidget {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 38),
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
