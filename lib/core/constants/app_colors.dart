@@ -31,6 +31,7 @@ class AppColors {
   static const Color onSurfaceVariant = Color(0xFF404943);
   static const Color outline = Color(0xFF707973);
   static const Color outlineVariant = Color(0xFFBFC9C1);
+  static const Color outlineSource = Color.fromARGB(255, 232, 235, 234);
   static const Color error = Color(0xFFBA1A1A);
   static const Color errorContainer = Color(0xFFFFDAD6);
 

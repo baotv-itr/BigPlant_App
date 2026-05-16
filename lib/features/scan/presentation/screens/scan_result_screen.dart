@@ -376,7 +376,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         label: t.t('field_scientific_name'),
         value: plant.scientificName,
         source: plant.sourceForField('scientific_name'),
-        italic: true,
+        italic: false,
       ),
       _TaxonomyItem(
         label: t.t('field_family'),
@@ -392,17 +392,17 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         label: t.t('field_genus'),
         value: plant.genus,
         source: plant.sourceForField('genus'),
-        italic: true,
+        italic: false,
       ),
       _TaxonomyItem(
         label: t.t('field_species'),
         value: plant.species,
         source: plant.sourceForField('species'),
-        italic: true,
+        italic: false,
       ),
       _TaxonomyItem(
         label: t.t('plant_taxonomic_status_label'),
-        value: _prettifyLabel(plant.taxonomicStatus),
+        value: plant.taxonomicStatus.toLowerCase(),
         source: plant.sourceForField('taxonomic_status'),
       ),
     ].where((item) => item.value.trim().isNotEmpty).toList();
@@ -898,7 +898,7 @@ class _SourceBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHighest,
+        color: AppColors.outlineSource,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -1223,27 +1223,65 @@ class _TaxonomyRow extends StatelessWidget {
                 ),
               ),
               if (item.source.trim().isNotEmpty)
-                Text(
-                  item.source.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 9,
-                  ),
-                ),
+                _SourceBadge(source: item.source),
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            item.value,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppColors.onSurface,
-              fontWeight: FontWeight.w600,
-              fontStyle: item.italic ? FontStyle.italic : FontStyle.normal,
-              fontSize: 16,
+          if (item.label == AppLocalizations.of(context).t('plant_taxonomic_status_label'))
+            _StatusTag(status: item.value)
+          else
+            Text(
+              item.value,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppColors.onSurface,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
             ),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusTag extends StatelessWidget {
+  const _StatusTag({required this.status});
+  final String status;
+
+  Color _getStatusColor() {
+    switch (status.toLowerCase()) {
+      case 'accepted':
+        return const Color(0xFF2E7D32); // Green
+      case 'synonym':
+        return const Color(0xFFF57C00); // Orange
+      case 'ambiguous':
+        return const Color(0xFF7B1FA2); // Purple
+      case 'unmatched':
+        return const Color(0xFFD32F2F); // Red
+      case 'unknown':
+      default:
+        return const Color(0xFF616161); // Grey
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _getStatusColor();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+              letterSpacing: 0.5,
+            ),
       ),
     );
   }
