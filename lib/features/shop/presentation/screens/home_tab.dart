@@ -613,12 +613,94 @@ class _PaginationRow extends StatelessWidget {
   final int totalPages;
   final ValueChanged<int> onPageSelected;
 
+  List<_PaginationEntry> _buildEntries() {
+    if (totalPages <= 5) {
+      return List<_PaginationEntry>.generate(
+        totalPages,
+        (index) => _PaginationEntry.page(index),
+      );
+    }
+
+    final entries = <_PaginationEntry>[];
+
+    void addPage(int page) {
+      if (entries.any((entry) => entry.page == page)) return;
+      entries.add(_PaginationEntry.page(page));
+    }
+
+    void addGap() {
+      if (entries.isEmpty || entries.last.isEllipsis) return;
+      entries.add(const _PaginationEntry.ellipsis());
+    }
+
+    if (currentPage == 0) {
+      addPage(0);
+      addPage(1);
+      addPage(2);
+      addGap();
+      addPage(totalPages - 1);
+      return entries;
+    }
+
+    if (currentPage == 1) {
+      addPage(0);
+      addPage(1);
+      addPage(2);
+      addGap();
+      addPage(totalPages - 1);
+      return entries;
+    }
+
+    if (currentPage == 2) {
+      addPage(0);
+      addPage(1);
+      addPage(2);
+      addPage(3);
+      addGap();
+      addPage(totalPages - 1);
+      return entries;
+    }
+
+    if (currentPage == totalPages - 3) {
+      addPage(0);
+      addGap();
+      addPage(totalPages - 4);
+      addPage(totalPages - 3);
+      addPage(totalPages - 2);
+      addPage(totalPages - 1);
+      return entries;
+    }
+
+    if (currentPage == totalPages - 2) {
+      addPage(0);
+      addGap();
+      addPage(totalPages - 3);
+      addPage(totalPages - 2);
+      addPage(totalPages - 1);
+      return entries;
+    }
+
+    if (currentPage == totalPages - 1) {
+      addPage(0);
+      addGap();
+      addPage(totalPages - 2);
+      addPage(totalPages - 1);
+      return entries;
+    }
+
+    addPage(0);
+    addGap();
+    addPage(currentPage - 1);
+    addPage(currentPage);
+    addPage(currentPage + 1);
+    addGap();
+    addPage(totalPages - 1);
+    return entries;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final visiblePages = List.generate(
-      totalPages,
-      (index) => index,
-    ).take(3).toList();
+    final entries = _buildEntries();
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -629,27 +711,20 @@ class _PaginationRow extends StatelessWidget {
           onTap: () => onPageSelected(currentPage - 1),
         ),
         const SizedBox(width: 8),
-        for (final page in visiblePages) ...[
-          _PageChip(
-            label: '${page + 1}',
-            selected: page == currentPage,
-            onTap: () => onPageSelected(page),
-          ),
-          const SizedBox(width: 8),
-        ],
-        if (totalPages > 3) ...[
-          Text(
-            '...',
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(color: AppColors.onSurfaceVariant),
-          ),
-          const SizedBox(width: 8),
-          _PageChip(
-            label: '$totalPages',
-            selected: currentPage == totalPages - 1,
-            onTap: () => onPageSelected(totalPages - 1),
-          ),
+        for (final entry in entries) ...[
+          if (entry.isEllipsis)
+            Text(
+              '...',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            )
+          else
+            _PageChip(
+              label: '${entry.page! + 1}',
+              selected: entry.page == currentPage,
+              onTap: () => onPageSelected(entry.page!),
+            ),
           const SizedBox(width: 8),
         ],
         _PageArrow(
@@ -660,6 +735,14 @@ class _PaginationRow extends StatelessWidget {
       ],
     );
   }
+}
+
+class _PaginationEntry {
+  const _PaginationEntry.page(this.page) : isEllipsis = false;
+  const _PaginationEntry.ellipsis() : page = null, isEllipsis = true;
+
+  final int? page;
+  final bool isEllipsis;
 }
 
 class _PageArrow extends StatelessWidget {
