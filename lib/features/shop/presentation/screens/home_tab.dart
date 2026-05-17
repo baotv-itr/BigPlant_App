@@ -4,8 +4,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../auth/data/storage_service.dart';
 import '../../../scan/presentation/screens/camera_realtime_scan_screen.dart';
-import '../../domain/local_shop_catalog.dart';
 import '../../domain/models/shop_product.dart';
+import '../../domain/shop_service.dart';
 import 'product_detail_screen.dart';
 
 class HomeTab extends StatefulWidget {
@@ -18,14 +18,23 @@ class HomeTab extends StatefulWidget {
 class _HomeTabState extends State<HomeTab> {
   static const _pageSize = 8;
 
+  final ShopService _shopService = ShopService();
+
   String _selectedCategorySlug = 'all';
   int _currentPage = 0;
   String _fullName = '';
+  bool _loadingProducts = true;
+  bool _loadingCategories = true;
+  String? _loadError;
+  List<ProductCategory> _categories = const [];
+  List<ShopProduct> _pageItems = const [];
+  int _totalPages = 1;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadCatalog();
   }
 
   Future<void> _loadProfile() async {
@@ -35,19 +44,74 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _loadCatalog() async {
+    setState(() {
+      _loadingCategories = true;
+      _loadError = null;
+    });
+
+    try {
+      final categories = await _shopService.fetchCategories();
+      if (!mounted) return;
+      setState(() {
+        _categories = categories;
+        _loadingCategories = false;
+      });
+      await _loadProducts();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingCategories = false;
+        _loadingProducts = false;
+        _loadError = e.toString();
+      });
+    }
+  }
+
+  Future<void> _loadProducts({String? categorySlug, int? page}) async {
+    final nextCategory = categorySlug ?? _selectedCategorySlug;
+    final nextPage = page ?? _currentPage;
+
+    setState(() {
+      _loadingProducts = true;
+      _loadError = null;
+    });
+
+    try {
+      final result = await _shopService.fetchProducts(
+        categorySlug: nextCategory == 'all' ? null : nextCategory,
+        page: nextPage + 1,
+        limit: _pageSize,
+      );
+      if (!mounted) return;
+      setState(() {
+        _selectedCategorySlug = nextCategory;
+        _currentPage = result.page - 1;
+        _pageItems = result.items;
+        _totalPages = result.totalPages;
+        _loadingProducts = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingProducts = false;
+        _loadError = e.toString();
+      });
+    }
   }
 
   void _selectCategory(String slug) {
-    setState(() {
-      _selectedCategorySlug = slug;
-      _currentPage = 0;
-    });
+    _loadProducts(categorySlug: slug, page: 0);
   }
 
   void _changePage(int page) {
-    if (page < 0 || page >= _totalPages) return;
-    setState(() => _currentPage = page);
+    if (page < 0 || page >= _totalPages || _loadingProducts) return;
+    _loadProducts(page: page);
   }
 
   String get _headlineName {
@@ -62,32 +126,16 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   String _categoryLabel(AppLocalizations t, ProductCategory category) {
+    final isVietnamese = Localizations.localeOf(context).languageCode == 'vi';
     switch (category.slug) {
-      case 'indoor-plants':
-        return t.t('category_indoor');
-      case 'outdoor-plants':
-        return t.t('category_outdoor');
-      case 'cacti-succulents':
-        return t.t('category_cactus');
-      case 'ornamental-plants':
-        return t.t('category_ornamental');
-      case 'aquatic-plants':
-        return t.t('category_hydro');
+      case 'plants':
+        return isVietnamese ? 'Cay' : 'Plants';
+      case 'pots':
+        return isVietnamese ? 'Chau' : 'Pots';
       default:
         return category.name;
     }
   }
-
-  List<ShopProduct> get _pageItems => LocalShopCatalog.pageItems(
-        categorySlug: _selectedCategorySlug,
-        page: _currentPage,
-        pageSize: _pageSize,
-      );
-
-  int get _totalPages => LocalShopCatalog.totalPages(
-        categorySlug: _selectedCategorySlug,
-        pageSize: _pageSize,
-      );
 
   @override
   Widget build(BuildContext context) {
@@ -96,8 +144,11 @@ class _HomeTabState extends State<HomeTab> {
 
     final categoryOptions = [
       _HomeCategoryOption(slug: 'all', label: t.t('category_all')),
-      for (final category in LocalShopCatalog.categories)
-        _HomeCategoryOption(slug: category.slug, label: category.name),
+      for (final category in _categories)
+        _HomeCategoryOption(
+          slug: category.slug,
+          label: _categoryLabel(t, category),
+        ),
     ];
 
     return DecoratedBox(
@@ -124,8 +175,12 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => _showMessage(t.t('home_account_coming_soon')),
-                  icon: const Icon(Icons.account_circle_outlined, color: AppColors.primary),
+                  onPressed: () =>
+                      _showMessage(t.t('home_account_coming_soon')),
+                  icon: const Icon(
+                    Icons.account_circle_outlined,
+                    color: AppColors.primary,
+                  ),
                 ),
               ],
             ),
@@ -159,7 +214,10 @@ class _HomeTabState extends State<HomeTab> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
-                      colors: [AppColors.secondaryContainer, AppColors.primaryFixed],
+                      colors: [
+                        AppColors.secondaryContainer,
+                        AppColors.primaryFixed,
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -230,7 +288,9 @@ class _HomeTabState extends State<HomeTab> {
                   borderRadius: BorderRadius.circular(16),
                   child: InkWell(
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const CameraRealtimeScanScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const CameraRealtimeScanScreen(),
+                      ),
                     ),
                     borderRadius: BorderRadius.circular(16),
                     child: const SizedBox(
@@ -248,27 +308,38 @@ class _HomeTabState extends State<HomeTab> {
             const SizedBox(height: 20),
             SizedBox(
               height: 40,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: categoryOptions.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final option = categoryOptions[index];
-                  final selected = option.slug == _selectedCategorySlug;
-                  return ChoiceChip(
-                    label: Text(option.label),
-                    selected: selected,
-                    showCheckmark: false,
-                    selectedColor: AppColors.secondaryContainer,
-                    backgroundColor: Colors.transparent,
-                    side: BorderSide.none,
-                    labelStyle: theme.textTheme.labelLarge?.copyWith(
-                      color: selected ? AppColors.onSecondaryContainer : AppColors.onSurfaceVariant,
+              child: _loadingCategories
+                  ? const Align(
+                      alignment: Alignment.centerLeft,
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2.2),
+                      ),
+                    )
+                  : ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categoryOptions.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final option = categoryOptions[index];
+                        final selected = option.slug == _selectedCategorySlug;
+                        return ChoiceChip(
+                          label: Text(option.label),
+                          selected: selected,
+                          showCheckmark: false,
+                          selectedColor: AppColors.secondaryContainer,
+                          backgroundColor: Colors.transparent,
+                          side: BorderSide.none,
+                          labelStyle: theme.textTheme.labelLarge?.copyWith(
+                            color: selected
+                                ? AppColors.onSecondaryContainer
+                                : AppColors.onSurfaceVariant,
+                          ),
+                          onSelected: (_) => _selectCategory(option.slug),
+                        );
+                      },
                     ),
-                    onSelected: (_) => _selectCategory(option.slug),
-                  );
-                },
-              ),
             ),
             const SizedBox(height: 28),
             Row(
@@ -283,45 +354,75 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: _totalPages > 1 ? () => _changePage((_currentPage + 1) % _totalPages) : null,
+                  onPressed: _totalPages > 1
+                      ? () => _changePage((_currentPage + 1) % _totalPages)
+                      : null,
                   label: Text(t.t('home_view_all')),
                   icon: const Icon(Icons.arrow_forward, size: 18),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _pageItems.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.68,
+            if (_loadError != null) ...[
+              _HomeMessageCard(message: _loadError!, icon: Icons.error_outline),
+              const SizedBox(height: 24),
+            ] else if (_loadingProducts && _pageItems.isEmpty) ...[
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  ),
+                ),
               ),
-              itemBuilder: (context, index) {
-                final product = _pageItems[index];
-                return _ProductCard(
-                  product: product,
-                  categoryLabel: _categoryLabel(t, product.category),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProductDetailScreen(product: product),
+            ] else if (_pageItems.isEmpty) ...[
+              const _HomeMessageCard(
+                message: 'No products available for this category yet.',
+                icon: Icons.inventory_2_outlined,
+              ),
+              const SizedBox(height: 24),
+            ] else ...[
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _pageItems.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 0.68,
+                ),
+                itemBuilder: (context, index) {
+                  final product = _pageItems[index];
+                  final category = product.category;
+                  return _ProductCard(
+                    product: product,
+                    categoryLabel: category == null
+                        ? ''
+                        : _categoryLabel(t, category),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ProductDetailScreen(product: product),
+                      ),
                     ),
-                  ),
-                  onAdd: () => _showMessage(
-                    t.t('product_added_to_cart').replaceFirst('{name}', product.name),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            _PaginationRow(
-              currentPage: _currentPage,
-              totalPages: _totalPages,
-              onPageSelected: _changePage,
-            ),
+                    onAdd: () => _showMessage(
+                      t
+                          .t('product_added_to_cart')
+                          .replaceFirst('{name}', product.name),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+              if (_totalPages > 1)
+                _PaginationRow(
+                  currentPage: _currentPage,
+                  totalPages: _totalPages,
+                  onPageSelected: _changePage,
+                ),
+            ],
           ],
         ),
       ),
@@ -334,6 +435,40 @@ class _HomeCategoryOption {
 
   final String slug;
   final String label;
+}
+
+class _HomeMessageCard extends StatelessWidget {
+  const _HomeMessageCard({required this.message, required this.icon});
+
+  final String message;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ProductCard extends StatelessWidget {
@@ -376,7 +511,9 @@ class _ProductCard extends StatelessWidget {
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
                   child: Image.network(
                     product.primaryImage.imageUrl,
                     width: double.infinity,
@@ -391,7 +528,11 @@ class _ProductCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.star, color: Color(0xFFF59E0B), size: 16),
+                        const Icon(
+                          Icons.star,
+                          color: Color(0xFFF59E0B),
+                          size: 16,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           product.ratingAvg.toStringAsFixed(1),
@@ -441,7 +582,11 @@ class _ProductCard extends StatelessWidget {
                               color: AppColors.primary,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(Icons.add, color: AppColors.white, size: 18),
+                            child: const Icon(
+                              Icons.add,
+                              color: AppColors.white,
+                              size: 18,
+                            ),
                           ),
                         ),
                       ],
@@ -470,7 +615,10 @@ class _PaginationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visiblePages = List.generate(totalPages, (index) => index).take(3).toList();
+    final visiblePages = List.generate(
+      totalPages,
+      (index) => index,
+    ).take(3).toList();
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -492,9 +640,9 @@ class _PaginationRow extends StatelessWidget {
         if (totalPages > 3) ...[
           Text(
             '...',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(width: 8),
           _PageChip(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../domain/models/shop_product.dart';
+import '../../domain/shop_service.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({required this.product, super.key});
@@ -14,27 +15,72 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  late int _selectedImageIndex;
-  late String _selectedSizeLabel;
-  late String _selectedPotStyle;
-  var _selectedSection = _ProductDetailSection.description;
+  final ShopService _shopService = ShopService();
 
-  ShopProduct get _product => widget.product;
+  int _selectedImageIndex = 0;
+  String _selectedSizeLabel = '';
+  String _selectedPotStyle = '';
+  var _selectedSection = _ProductDetailSection.description;
+  bool _loadingDetails = false;
+  String? _detailError;
+  ShopProduct? _resolvedProduct;
+
+  ShopProduct get _product => _resolvedProduct ?? widget.product;
 
   @override
   void initState() {
     super.initState();
-    _selectedImageIndex = 0;
-    _selectedSizeLabel = _product.sizeVariants.first.sizeLabel;
-    _selectedPotStyle = _product.potStyles.isNotEmpty
-        ? _product.potStyles.first
-        : _product.defaultVariant.potStyle;
+    _syncSelections(_product);
+    _loadProductDetail();
+  }
+
+  Future<void> _loadProductDetail() async {
+    setState(() {
+      _loadingDetails = true;
+      _detailError = null;
+    });
+
+    try {
+      final product = await _shopService.fetchProductDetail(_product.slug);
+      if (!mounted) return;
+      setState(() {
+        _resolvedProduct = product;
+        _loadingDetails = false;
+      });
+      _syncSelections(product);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingDetails = false;
+        _detailError = e.toString();
+      });
+    }
+  }
+
+  void _syncSelections(ShopProduct product) {
+    final sizeOptions = product.sizeVariants;
+    final potStyles = product.potStyles;
+    final currentSize = _selectedSizeLabel;
+    final currentPotStyle = _selectedPotStyle;
+
+    _selectedSizeLabel =
+        sizeOptions.any((item) => item.sizeLabel == currentSize)
+        ? currentSize
+        : sizeOptions.first.sizeLabel;
+    _selectedPotStyle = potStyles.contains(currentPotStyle)
+        ? currentPotStyle
+        : (potStyles.isNotEmpty
+              ? potStyles.first
+              : product.defaultVariant.potStyle);
+    if (_selectedImageIndex >= product.sortedImages.length) {
+      _selectedImageIndex = 0;
+    }
   }
 
   ProductVariant get _selectedVariant => _product.resolveVariant(
-        sizeLabel: _selectedSizeLabel,
-        potStyle: _selectedPotStyle,
-      );
+    sizeLabel: _selectedSizeLabel,
+    potStyle: _selectedPotStyle,
+  );
 
   ProductImage get _selectedImage {
     final images = _product.sortedImages;
@@ -43,36 +89,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void _showActionMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _storyHeadline(AppLocalizations t) {
-    switch (_product.slug) {
-      case 'monstera-deliciosa':
-        return t.t('product_story_monstera');
-      case 'fiddle-leaf-fig':
-        return t.t('product_story_fiddle');
-      case 'snake-plant':
-        return t.t('product_story_snake');
-      default:
-        return t.t('product_story_default');
-    }
+    final commonName = _product.linkedPlant?.commonName.trim() ?? '';
+    if (commonName.isNotEmpty) return commonName;
+    return _product.name;
   }
 
   String _localizedCategoryLabel(AppLocalizations t) {
-    switch (_product.category.slug) {
-      case 'indoor-plants':
-        return t.t('category_indoor');
-      case 'outdoor-plants':
-        return t.t('category_outdoor');
-      case 'cacti-succulents':
-        return t.t('category_cactus');
-      case 'ornamental-plants':
-        return t.t('category_ornamental');
-      case 'aquatic-plants':
-        return t.t('category_hydro');
+    final category = _product.category;
+    if (category == null) return '';
+    final isVietnamese = Localizations.localeOf(context).languageCode == 'vi';
+    switch (category.slug) {
+      case 'plants':
+        return isVietnamese ? 'Cay' : 'Plants';
+      case 'pots':
+        return isVietnamese ? 'Chau' : 'Pots';
       default:
-        return _product.category.name;
+        return category.name;
     }
   }
 
@@ -95,6 +133,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final theme = Theme.of(context);
     final plant = _product.linkedPlant;
     final variant = _selectedVariant;
+    final specChips = <Widget>[
+      if (variant.waterNeed.trim().isNotEmpty)
+        _SpecChip(icon: Icons.water_drop, label: variant.waterNeed),
+      if (variant.lightNeed.trim().isNotEmpty)
+        _SpecChip(icon: Icons.light_mode, label: variant.lightNeed),
+      if (_product.careLevel.trim().isNotEmpty)
+        _SpecChip(
+          icon: Icons.psychology,
+          label: _product.careLevel,
+          outlined: true,
+        ),
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.backgroundTop,
@@ -118,7 +168,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: () => _showActionMessage(t.t('product_account_coming_soon')),
+            onPressed: () =>
+                _showActionMessage(t.t('product_account_coming_soon')),
             icon: const Icon(Icons.account_circle_outlined),
           ),
           const SizedBox(width: 8),
@@ -127,6 +178,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
         children: [
+          if (_loadingDetails)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 16),
+              child: LinearProgressIndicator(minHeight: 3),
+            ),
+          if (_detailError != null) ...[
+            _DetailInfoBanner(message: _detailError!, icon: Icons.info_outline),
+            const SizedBox(height: 16),
+          ],
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 4,
@@ -138,14 +198,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   color: AppColors.onSurfaceVariant,
                 ),
               ),
-              const Icon(Icons.chevron_right, size: 16, color: AppColors.outline),
+              const Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: AppColors.outline,
+              ),
               Text(
                 _localizedCategoryLabel(t),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: AppColors.onSurfaceVariant,
                 ),
               ),
-              const Icon(Icons.chevron_right, size: 16, color: AppColors.outline),
+              const Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: AppColors.outline,
+              ),
               Text(
                 _product.name,
                 style: theme.textTheme.labelSmall?.copyWith(
@@ -172,7 +240,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               borderRadius: BorderRadius.circular(24),
               child: AspectRatio(
                 aspectRatio: 1,
-                child: Image.network(_selectedImage.imageUrl, fit: BoxFit.cover),
+                child: Image.network(
+                  _selectedImage.imageUrl,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
@@ -193,7 +264,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: selected ? AppColors.primary : Colors.transparent,
+                        color: selected
+                            ? AppColors.primary
+                            : Colors.transparent,
                         width: 2,
                       ),
                     ),
@@ -229,13 +302,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           const SizedBox(height: 8),
           Text(
             _product.name,
-            style: theme.textTheme.titleLarge?.copyWith(color: AppColors.blackLight),
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: AppColors.blackLight,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              ...List.generate(4, (_) => const Icon(Icons.star, color: Color(0xFFF59E0B), size: 18)),
-              const Icon(Icons.star_half, color: AppColors.outlineVariant, size: 18),
+              ..._buildRatingStars(_product.ratingAvg),
               const SizedBox(width: 8),
               Text(
                 '${_product.ratingAvg.toStringAsFixed(1)} (${_product.ratingCount} ${t.t('product_reviews_label')})',
@@ -273,28 +347,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            _product.shortDescription,
+            _product.shortDescription.trim().isEmpty
+                ? _product.description
+                : _product.shortDescription,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: AppColors.onSurfaceVariant,
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _SpecChip(icon: Icons.water_drop, label: variant.waterNeed),
-              _SpecChip(icon: Icons.light_mode, label: variant.lightNeed),
-              _SpecChip(icon: Icons.psychology, label: _product.careLevel, outlined: true),
-            ],
-          ),
+          if (specChips.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Wrap(spacing: 8, runSpacing: 8, children: specChips),
+          ],
           const SizedBox(height: 20),
           const Divider(color: AppColors.surfaceContainerHighest),
           const SizedBox(height: 20),
           Text(
             t.t('product_select_size'),
-            style: theme.textTheme.labelLarge?.copyWith(color: AppColors.blackLight),
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppColors.blackLight,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -304,15 +376,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 child: Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: InkWell(
-                    onTap: () => setState(() => _selectedSizeLabel = option.sizeLabel),
+                    onTap: () =>
+                        setState(() => _selectedSizeLabel = option.sizeLabel),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: selected ? AppColors.primary : AppColors.outlineVariant,
+                          color: selected
+                              ? AppColors.primary
+                              : AppColors.outlineVariant,
                           width: selected ? 2 : 1,
                         ),
                       ),
@@ -321,7 +399,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           Text(
                             option.sizeLabel,
                             style: theme.textTheme.labelLarge?.copyWith(
-                              color: selected ? AppColors.primary : AppColors.onSurface,
+                              color: selected
+                                  ? AppColors.primary
+                                  : AppColors.onSurface,
                             ),
                           ),
                           if (option.sizeSubtitle.isNotEmpty) ...[
@@ -341,48 +421,56 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 20),
-          Text(
-            t.t('product_pot_style'),
-            style: theme.textTheme.labelLarge?.copyWith(color: AppColors.blackLight),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: _product.potStyles.map((style) {
-              final selected = style == _selectedPotStyle;
-              return GestureDetector(
-                onTap: () => setState(() => _selectedPotStyle = style),
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _potStyleColor(style),
-                    border: Border.all(
-                      color: selected ? AppColors.primary : Colors.transparent,
-                      width: 2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.08),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
+          if (_product.potStyles.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              t.t('product_pot_style'),
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: AppColors.blackLight,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: _product.potStyles.map((style) {
+                final selected = style == _selectedPotStyle;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedPotStyle = style),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _potStyleColor(style),
+                      border: Border.all(
+                        color: selected
+                            ? AppColors.primary
+                            : Colors.transparent,
+                        width: 2,
                       ),
-                    ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
+                );
+              }).toList(),
+            ),
+          ],
           const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _showActionMessage(
-                    t.t('product_added_to_cart').replaceFirst('{name}', _product.name),
+                    t
+                        .t('product_added_to_cart')
+                        .replaceFirst('{name}', _product.name),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
@@ -399,7 +487,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => _showActionMessage(t.t('product_buy_now_coming_soon')), 
+                  onPressed: () =>
+                      _showActionMessage(t.t('product_buy_now_coming_soon')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.onPrimary,
@@ -466,47 +555,64 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     fontSize: 28,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  plant.description,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    height: 1.7,
+                if ((plant?.description.trim().isNotEmpty ?? false)) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    plant!.description,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.7,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _product.description,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    height: 1.7,
+                ],
+                if (_product.description.trim().isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    _product.description,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.7,
+                    ),
                   ),
-                ),
+                ],
               ],
             )
           else if (_selectedSection == _ProductDetailSection.care)
             Column(
               children: [
-                _CareDetailCard(
-                  icon: Icons.water_drop,
-                  title: t.t('product_care_water'),
-                  value: variant.waterNeed,
-                ),
-                const SizedBox(height: 12),
-                _CareDetailCard(
-                  icon: Icons.light_mode,
-                  title: t.t('product_care_light'),
-                  value: variant.lightNeed,
-                ),
-                const SizedBox(height: 12),
-                _CareDetailCard(
-                  icon: Icons.psychology,
-                  title: t.t('product_care_level'),
-                  value: _product.careLevel,
-                ),
+                if (variant.waterNeed.trim().isNotEmpty) ...[
+                  _CareDetailCard(
+                    icon: Icons.water_drop,
+                    title: t.t('product_care_water'),
+                    value: variant.waterNeed,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (variant.lightNeed.trim().isNotEmpty) ...[
+                  _CareDetailCard(
+                    icon: Icons.light_mode,
+                    title: t.t('product_care_light'),
+                    value: variant.lightNeed,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (_product.careLevel.trim().isNotEmpty)
+                  _CareDetailCard(
+                    icon: Icons.psychology,
+                    title: t.t('product_care_level'),
+                    value: _product.careLevel,
+                  ),
+                if (variant.waterNeed.trim().isEmpty &&
+                    variant.lightNeed.trim().isEmpty &&
+                    _product.careLevel.trim().isEmpty)
+                  const _DetailInfoBanner(
+                    message:
+                        'Care instructions are not available for this product yet.',
+                    icon: Icons.spa_outlined,
+                  ),
               ],
             )
-          else
+          else if (plant != null)
             Column(
               children: [
                 Row(
@@ -535,14 +641,76 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   value: plant.toxicityWarning,
                 ),
               ],
+            )
+          else
+            const _DetailInfoBanner(
+              message:
+                  'Botanical details are not available for this product yet.',
+              icon: Icons.eco_outlined,
             ),
         ],
       ),
     );
   }
+
+  List<Widget> _buildRatingStars(double rating) {
+    return List<Widget>.generate(5, (index) {
+      final position = index + 1;
+      IconData icon;
+      Color color;
+
+      if (rating >= position) {
+        icon = Icons.star;
+        color = const Color(0xFFF59E0B);
+      } else if (rating >= position - 0.5) {
+        icon = Icons.star_half;
+        color = const Color(0xFFF59E0B);
+      } else {
+        icon = Icons.star_border;
+        color = AppColors.outlineVariant;
+      }
+
+      return Icon(icon, color: color, size: 18);
+    });
+  }
 }
 
 enum _ProductDetailSection { description, care, botanical }
+
+class _DetailInfoBanner extends StatelessWidget {
+  const _DetailInfoBanner({required this.message, required this.icon});
+
+  final String message;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _SpecChip extends StatelessWidget {
   const _SpecChip({
@@ -560,7 +728,9 @@ class _SpecChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: outlined ? AppColors.surfaceContainerHighest : AppColors.secondaryContainer,
+        color: outlined
+            ? AppColors.surfaceContainerHighest
+            : AppColors.secondaryContainer,
         borderRadius: BorderRadius.circular(999),
         border: outlined ? Border.all(color: AppColors.outlineVariant) : null,
       ),
@@ -570,13 +740,17 @@ class _SpecChip extends StatelessWidget {
           Icon(
             icon,
             size: 16,
-            color: outlined ? AppColors.onSurfaceVariant : AppColors.onSecondaryContainer,
+            color: outlined
+                ? AppColors.onSurfaceVariant
+                : AppColors.onSecondaryContainer,
           ),
           const SizedBox(width: 6),
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: outlined ? AppColors.onSurfaceVariant : AppColors.onSecondaryContainer,
+              color: outlined
+                  ? AppColors.onSurfaceVariant
+                  : AppColors.onSecondaryContainer,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -596,7 +770,10 @@ class _SectionTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final tabs = <MapEntry<_ProductDetailSection, String>>[
-      MapEntry(_ProductDetailSection.description, t.t('product_tab_description')),
+      MapEntry(
+        _ProductDetailSection.description,
+        t.t('product_tab_description'),
+      ),
       MapEntry(_ProductDetailSection.care, t.t('product_tab_care')),
       MapEntry(_ProductDetailSection.botanical, t.t('product_tab_botanical')),
     ];
@@ -628,7 +805,9 @@ class _SectionTabs extends StatelessWidget {
               child: Text(
                 tab.value,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: active ? AppColors.primary : AppColors.onSurfaceVariant,
+                  color: active
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant,
                 ),
               ),
             ),
@@ -692,9 +871,9 @@ class _CareDetailCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.blackLight,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: AppColors.blackLight),
                 ),
               ],
             ),
