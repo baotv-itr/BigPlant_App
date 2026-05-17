@@ -81,19 +81,19 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   String get _frameworkLabel {
     final explicit = widget.inferenceFramework?.trim() ?? '';
     if (explicit.isNotEmpty) return explicit;
-    
+
     final initialBackend = widget.result.backend?.trim() ?? '';
     if (initialBackend.isNotEmpty) {
       if (initialBackend.toLowerCase() == 'tensorrt') return 'TensorRT';
       return initialBackend;
     }
-    
+
     final apiBackend = _fetchedDetails?.backend?.trim() ?? '';
     if (apiBackend.isNotEmpty) {
       if (apiBackend.toLowerCase() == 'tensorrt') return 'TensorRT';
       return apiBackend;
     }
-    
+
     return 'TensorRT';
   }
 
@@ -103,7 +103,8 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       _fetchError = null;
     });
     try {
-      final apiResult = widget.plantLabel != null && widget.plantLabel!.isNotEmpty
+      final apiResult =
+          widget.plantLabel != null && widget.plantLabel!.isNotEmpty
           ? await _scanService.scanPlantByLabel(label: widget.plantLabel!)
           : await _scanService.scanPlant(
               imageBytes: widget.imageBytes,
@@ -236,7 +237,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
 
     Clipboard.setData(ClipboardData(text: payload));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context).t('toast_saved_clipboard'))),
+      SnackBar(
+        content: Text(AppLocalizations.of(context).t('toast_saved_clipboard')),
+      ),
     );
   }
 
@@ -258,8 +261,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 title: _primaryDisplayTitle(plant),
                 subtitle: _secondaryDisplayTitle(plant),
                 frameworkLabel: _frameworkLabel,
-                modelLabel: widget.result.modelName ?? _fetchedDetails?.modelName,
-                confidence: widget.result.confidence ?? _fetchedDetails?.confidence,
+                modelLabel:
+                    widget.result.modelName ?? _fetchedDetails?.modelName,
+                confidence:
+                    widget.result.confidence ?? _fetchedDetails?.confidence,
               ),
               const SizedBox(height: 24),
               if (_fetchingDetails) ...[
@@ -283,22 +288,26 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 source: plant.sourceForField('description'),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: ScanResultScreen.valueOrPlaceholder(plant.description)
-                      .split('\n')
-                      .map((line) => line.trim())
-                      .where((line) => line.isNotEmpty)
-                      .map((line) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Text(
-                              line,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: AppColors.onSurfaceVariant,
-                                    height: 1.5,
-                                    fontSize: 15,
-                                  ),
+                  children:
+                      ScanResultScreen.valueOrPlaceholder(plant.description)
+                          .split('\n')
+                          .map((line) => line.trim())
+                          .where((line) => line.isNotEmpty)
+                          .map(
+                            (line) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Text(
+                                line,
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: AppColors.onSurfaceVariant,
+                                      height: 1.5,
+                                      fontSize: 15,
+                                    ),
+                              ),
                             ),
-                          ))
-                      .toList(),
+                          )
+                          .toList(),
                 ),
               ),
               const SizedBox(height: 24),
@@ -306,9 +315,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 title: t.t('plant_section_taxonomy'),
                 icon: Icons.account_tree,
                 child: Column(
-                  children: _taxonomyRows(t, plant)
-                      .map((row) => _TaxonomyRow(item: row))
-                      .toList(),
+                  children: _taxonomyRows(
+                    t,
+                    plant,
+                  ).map((row) => _TaxonomyRow(item: row)).toList(),
                 ),
               ),
               const SizedBox(height: 24),
@@ -400,10 +410,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     return const JsonEncoder.withIndent('  ').convert(data);
   }
 
-  List<_TaxonomyItem> _taxonomyRows(
-    AppLocalizations t,
-    PlantScanResult plant,
-  ) {
+  List<_TaxonomyItem> _taxonomyRows(AppLocalizations t, PlantScanResult plant) {
     return [
       _TaxonomyItem(
         label: t.t('field_scientific_name'),
@@ -441,10 +448,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     ].where((item) => item.value.trim().isNotEmpty).toList();
   }
 
-  List<_BenefitItem> _benefitItems(
-    AppLocalizations t,
-    PlantScanResult plant,
-  ) {
+  List<_BenefitItem> _benefitItems(AppLocalizations t, PlantScanResult plant) {
     final items = <_BenefitItem>[];
 
     if (plant.uses.trim().isNotEmpty) {
@@ -487,8 +491,11 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     if (raw.isEmpty) return raw;
     return raw
         .split(RegExp(r'[_\s]+'))
-        .map((part) =>
-            part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+        .map(
+          (part) => part.isEmpty
+              ? part
+              : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+        )
         .join(' ');
   }
 
@@ -552,10 +559,11 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                       Expanded(
                         child: Text(
                           t.t('distribution_detail_title'),
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: AppColors.primary,
-                            fontSize: 24,
-                          ),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 24,
+                              ),
                         ),
                       ),
                       Material(
@@ -577,7 +585,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                     ],
                   ),
                 ),
-                const Divider(height: 1, color: AppColors.surfaceContainerHighest),
+                const Divider(
+                  height: 1,
+                  color: AppColors.surfaceContainerHighest,
+                ),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
@@ -878,10 +889,7 @@ class _InlineWarning extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFFFD8A8)),
       ),
-      child: Text(
-        message,
-        style: const TextStyle(color: Color(0xFF8A4B00)),
-      ),
+      child: Text(message, style: const TextStyle(color: Color(0xFF8A4B00))),
     );
   }
 }
@@ -945,7 +953,8 @@ class _PlantSectionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if ((source ?? '').trim().isNotEmpty) _SourceBadge(source: source!),
+              if ((source ?? '').trim().isNotEmpty)
+                _SourceBadge(source: source!),
             ],
           ),
           const SizedBox(height: 24),
@@ -961,8 +970,19 @@ class _SourceBadge extends StatelessWidget {
 
   final String source;
 
+  String get _displaySource {
+    final cleaned = source.trim();
+    if (cleaned.isEmpty) return cleaned;
+    return cleaned.split('_').first.trim();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final label = _displaySource;
+    if (label.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -970,7 +990,7 @@ class _SourceBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        source.toUpperCase(),
+        label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: AppColors.primary,
           fontWeight: FontWeight.w800,
@@ -1023,30 +1043,40 @@ class _EvidenceSafetyCard extends StatelessWidget {
                   .split(';')
                   .map((e) => e.trim())
                   .where((e) => e.isNotEmpty)
-                  .map((e) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.1),
+                  .map(
+                    (e) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.fact_check,
+                            size: 16,
+                            color: AppColors.primary,
                           ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.fact_check, size: 16, color: AppColors.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              _prettyEnum(e),
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ))
+                          const SizedBox(width: 8),
+                          Text(
+                            _prettyEnum(e),
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           const SizedBox(height: 20),
@@ -1059,7 +1089,8 @@ class _EvidenceSafetyCard extends StatelessWidget {
               titleColor: AppColors.error,
               content: plant.toxicityWarning,
             ),
-          if (plant.toxicityWarning.trim().isNotEmpty) const SizedBox(height: 16),
+          if (plant.toxicityWarning.trim().isNotEmpty)
+            const SizedBox(height: 16),
           if (plant.safetyNotes.trim().isNotEmpty)
             _DangerInfoCard(
               title: t.t('plant_safety_notes_title'),
@@ -1078,8 +1109,11 @@ class _EvidenceSafetyCard extends StatelessWidget {
   String _prettyEnum(String value) {
     return value
         .split(RegExp(r'[_\s]+'))
-        .map((part) =>
-            part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+        .map(
+          (part) => part.isEmpty
+              ? part
+              : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+        )
         .join(' ');
   }
 }
@@ -1139,15 +1173,19 @@ class _DangerInfoCard extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('• ', style: TextStyle(color: AppColors.onSurfaceVariant)),
+                          const Text(
+                            '• ',
+                            style: TextStyle(color: AppColors.onSurfaceVariant),
+                          ),
                           Expanded(
                             child: Text(
                               line,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.onSurfaceVariant,
-                                height: 1.6,
-                                fontSize: 14,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: AppColors.onSurfaceVariant,
+                                    height: 1.6,
+                                    fontSize: 14,
+                                  ),
                             ),
                           ),
                         ],
@@ -1297,7 +1335,8 @@ class _TaxonomyRow extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          if (item.label == AppLocalizations.of(context).t('plant_taxonomic_status_label'))
+          if (item.label ==
+              AppLocalizations.of(context).t('plant_taxonomic_status_label'))
             _StatusTag(status: item.value)
           else
             Text(
@@ -1347,11 +1386,11 @@ class _StatusTag extends StatelessWidget {
       child: Text(
         status.toUpperCase(),
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-              letterSpacing: 0.5,
-            ),
+          color: color,
+          fontWeight: FontWeight.w800,
+          fontSize: 12,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -1452,7 +1491,10 @@ class _BenefitTile extends StatelessWidget {
               ),
               if (item.source.trim().isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color.fromARGB(210, 255, 255, 255),
                     borderRadius: BorderRadius.circular(6),
@@ -1475,25 +1517,28 @@ class _BenefitTile extends StatelessWidget {
               Icon(item.icon, color: AppColors.white),
               const SizedBox(width: 12),
               Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: item.description
-                        .split('\n')
-                        .map((line) => line.trim())
-                        .where((line) => line.isNotEmpty)
-                        .map((line) => Padding(
-                              padding: const EdgeInsets.only(bottom: 7),
-                              child: Text(
-                                line,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.85),
-                                      height: 1.5,
-                                      fontSize: 13,
-                                    ),
-                              ),
-                            ))
-                        .toList(),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: item.description
+                      .split('\n')
+                      .map((line) => line.trim())
+                      .where((line) => line.isNotEmpty)
+                      .map(
+                        (line) => Padding(
+                          padding: const EdgeInsets.only(bottom: 7),
+                          child: Text(
+                            line,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  height: 1.5,
+                                  fontSize: 13,
+                                ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
               ),
             ],
           ),
@@ -1542,7 +1587,9 @@ class _DistributionCard extends StatelessWidget {
                       if (hasMap)
                         FlutterMap(
                           options: MapOptions(
-                            initialCenter: _centerPoint(plant.distributionPoints),
+                            initialCenter: _centerPoint(
+                              plant.distributionPoints,
+                            ),
                             initialZoom: 2.8,
                             interactionOptions: const InteractionOptions(
                               flags: InteractiveFlag.none,
@@ -1550,7 +1597,8 @@ class _DistributionCard extends StatelessWidget {
                           ),
                           children: [
                             TileLayer(
-                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              urlTemplate:
+                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                               userAgentPackageName: 'com.bigplant.app',
                             ),
                             MarkerLayer(
@@ -1586,7 +1634,9 @@ class _DistributionCard extends StatelessWidget {
                         top: 0,
                         bottom: 0,
                         child: IgnorePointer(
-                          child: CustomPaint(painter: _DottedMapOverlayPainter()),
+                          child: CustomPaint(
+                            painter: _DottedMapOverlayPainter(),
+                          ),
                         ),
                       ),
                       const Center(
@@ -1648,10 +1698,10 @@ class _DistributionCard extends StatelessWidget {
 
   LatLng _centerPoint(List<PlantDistributionPoint> points) {
     if (points.isEmpty) return const LatLng(16.0471, 108.2068);
-    final latAvg = points.fold<double>(0, (sum, item) => sum + item.lat) /
-        points.length;
-    final lngAvg = points.fold<double>(0, (sum, item) => sum + item.lng) /
-        points.length;
+    final latAvg =
+        points.fold<double>(0, (sum, item) => sum + item.lat) / points.length;
+    final lngAvg =
+        points.fold<double>(0, (sum, item) => sum + item.lng) / points.length;
     return LatLng(latAvg, lngAvg);
   }
 }
@@ -1742,9 +1792,9 @@ class _DistributionListTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.onSurface,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(color: AppColors.onSurface),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1786,9 +1836,11 @@ class _DistributionMapScreenState extends State<_DistributionMapScreen> {
 
   LatLng get _center {
     if (widget.points.isEmpty) return const LatLng(16.0471, 108.2068);
-    final latAvg = widget.points.fold<double>(0, (sum, item) => sum + item.lat) /
+    final latAvg =
+        widget.points.fold<double>(0, (sum, item) => sum + item.lat) /
         widget.points.length;
-    final lngAvg = widget.points.fold<double>(0, (sum, item) => sum + item.lng) /
+    final lngAvg =
+        widget.points.fold<double>(0, (sum, item) => sum + item.lng) /
         widget.points.length;
     return LatLng(latAvg, lngAvg);
   }
@@ -1853,16 +1905,20 @@ class _DistributionMapScreenState extends State<_DistributionMapScreen> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: AppColors.primary,
+                        ),
                       ),
                       Expanded(
                         child: Text(
                           widget.title,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: AppColors.primary,
-                            fontSize: 24,
-                          ),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 24,
+                              ),
                         ),
                       ),
                       const SizedBox(width: 48),
@@ -1898,22 +1954,18 @@ class _DistributionMapScreenState extends State<_DistributionMapScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   t.t('distribution_ecology_title'),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelLarge
+                                  style: Theme.of(context).textTheme.labelLarge
                                       ?.copyWith(color: AppColors.onSurface),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              t.t('distribution_found_template').replaceFirst(
-                                    '{count}',
-                                    '$locationCount',
-                                  ),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.onSurfaceVariant,
-                              ),
+                              t
+                                  .t('distribution_found_template')
+                                  .replaceFirst('{count}', '$locationCount'),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: AppColors.onSurfaceVariant),
                             ),
                             const SizedBox(height: 12),
                             Wrap(
@@ -1921,7 +1973,9 @@ class _DistributionMapScreenState extends State<_DistributionMapScreen> {
                               runSpacing: 8,
                               children: [
                                 _MapChip(label: t.t('distribution_biome_chip')),
-                                _MapChip(label: t.t('distribution_humidity_chip')),
+                                _MapChip(
+                                  label: t.t('distribution_humidity_chip'),
+                                ),
                               ],
                             ),
                           ],
@@ -1968,19 +2022,16 @@ class _MapChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.onSurfaceVariant,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant),
       ),
     );
   }
 }
 
 class _ScanSuccessBanner extends StatelessWidget {
-  const _ScanSuccessBanner({
-    required this.visible,
-    required this.plantName,
-  });
+  const _ScanSuccessBanner({required this.visible, required this.plantName});
 
   final bool visible;
   final String plantName;
@@ -2038,30 +2089,35 @@ class _ScanSuccessBanner extends StatelessWidget {
                       children: [
                         Text(
                           AppLocalizations.of(context).t('scan_success_title'),
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                            letterSpacing: 0.5,
-                          ),
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                                letterSpacing: 0.5,
+                              ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           plantName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                          ),
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(999),

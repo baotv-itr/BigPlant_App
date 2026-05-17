@@ -59,9 +59,9 @@ class _ScanTabState extends State<ScanTab> {
       if (mounted) setState(() => _previewBytes = null);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -70,9 +70,9 @@ class _ScanTabState extends State<ScanTab> {
   }
 
   Future<void> _openRealtimeCamera() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const CameraRealtimeScanScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const CameraRealtimeScanScreen()));
   }
 
   @override
@@ -175,7 +175,7 @@ class _ScanTabState extends State<ScanTab> {
   }
 }
 
-class _PreviewCard extends StatefulWidget {
+class _PreviewCard extends StatelessWidget {
   const _PreviewCard({
     required this.previewBytes,
     required this.idleMessage,
@@ -187,44 +187,6 @@ class _PreviewCard extends StatefulWidget {
   final bool loading;
 
   @override
-  State<_PreviewCard> createState() => _PreviewCardState();
-}
-
-class _PreviewCardState extends State<_PreviewCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _animCtrl;
-  late final Animation<double> _slideAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _animCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    _slideAnim = Tween<double>(begin: -0.33, end: 1.0).animate(
-      CurvedAnimation(parent: _animCtrl, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void didUpdateWidget(covariant _PreviewCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.loading && !oldWidget.loading) {
-      _animCtrl.repeat();
-    } else if (!widget.loading && oldWidget.loading) {
-      _animCtrl.stop();
-      _animCtrl.reset();
-    }
-  }
-
-  @override
-  void dispose() {
-    _animCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return AspectRatio(
       aspectRatio: 5 / 6,
@@ -232,7 +194,9 @@ class _PreviewCardState extends State<_PreviewCard>
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerLowest.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.2),
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withValues(alpha: 0.06),
@@ -246,8 +210,8 @@ class _PreviewCardState extends State<_PreviewCard>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (widget.previewBytes != null)
-                Image.memory(widget.previewBytes!, fit: BoxFit.cover)
+              if (previewBytes != null)
+                Image.memory(previewBytes!, fit: BoxFit.cover)
               else ...[
                 Positioned(
                   top: -48,
@@ -295,44 +259,31 @@ class _PreviewCardState extends State<_PreviewCard>
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          widget.idleMessage,
+                          idleMessage,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppColors.onSurfaceVariant),
                         ),
                       ],
                     ),
                   ),
                 ),
               ],
-              if (widget.loading)
+              if (loading)
                 Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: Container(
+                  child: SizedBox(
                     height: 4,
-                    color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
-                    child: AnimatedBuilder(
-                      animation: _slideAnim,
-                      builder: (context, child) {
-                        return FractionallySizedBox(
-                          alignment: Alignment(
-                            _slideAnim.value.clamp(-1.0, 1.0),
-                            0,
-                          ),
-                          widthFactor: 0.33,
-                          child: child,
-                        );
-                      },
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [AppColors.primaryFixed, AppColors.primary],
-                          ),
-                          borderRadius: BorderRadius.all(Radius.circular(999)),
-                        ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
+                      ),
+                      child: const LinearProgressIndicator(
+                        backgroundColor: AppColors.surfaceContainerHighest,
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
@@ -394,10 +345,18 @@ class _CornerMarker extends StatelessWidget {
           bottomRight: !top && !left ? const Radius.circular(12) : Radius.zero,
         ),
         border: Border(
-          top: top ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
-          left: left ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
-          right: !left ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
-          bottom: !top ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
+          top: top
+              ? const BorderSide(color: AppColors.primary, width: 2)
+              : BorderSide.none,
+          left: left
+              ? const BorderSide(color: AppColors.primary, width: 2)
+              : BorderSide.none,
+          right: !left
+              ? const BorderSide(color: AppColors.primary, width: 2)
+              : BorderSide.none,
+          bottom: !top
+              ? const BorderSide(color: AppColors.primary, width: 2)
+              : BorderSide.none,
         ),
       ),
     );
@@ -434,7 +393,9 @@ class _ActionButton extends StatelessWidget {
             backgroundColor: AppColors.surfaceContainerLowest,
             foregroundColor: AppColors.primary,
             minimumSize: const Size.fromHeight(56),
-            side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+            side: BorderSide(
+              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -442,11 +403,7 @@ class _ActionButton extends StatelessWidget {
 
     final child = Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon),
-        const SizedBox(width: 12),
-        Text(label),
-      ],
+      children: [Icon(icon), const SizedBox(width: 12), Text(label)],
     );
 
     return filled
@@ -554,11 +511,7 @@ class _TipRow extends StatelessWidget {
 }
 
 class _TipItem {
-  const _TipItem({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
+  const _TipItem({required this.icon, required this.title, required this.body});
 
   final IconData icon;
   final String title;
