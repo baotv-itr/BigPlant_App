@@ -12,6 +12,7 @@ class ShopApi {
 
   Future<Map<String, dynamic>> fetchProducts({
     String? categorySlug,
+    String? query,
     required int page,
     required int limit,
   }) {
@@ -20,6 +21,7 @@ class ShopApi {
       'limit': '$limit',
       if (categorySlug != null && categorySlug.trim().isNotEmpty)
         'category': categorySlug.trim(),
+      if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
     };
     return _client.get(_buildUrl('api/shop/products', queryParameters: params));
   }

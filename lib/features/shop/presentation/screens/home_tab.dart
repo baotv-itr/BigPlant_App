@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -17,10 +19,13 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   static const _pageSize = 8;
+  static const _searchDebounce = Duration(milliseconds: 350);
 
   final ShopService _shopService = ShopService();
+  final TextEditingController _searchController = TextEditingController();
 
   String _selectedCategorySlug = 'all';
+  String _searchQuery = '';
   int _currentPage = 0;
   String _fullName = '';
   bool _loadingProducts = true;
@@ -29,12 +34,20 @@ class _HomeTabState extends State<HomeTab> {
   List<ProductCategory> _categories = const [];
   List<ShopProduct> _pageItems = const [];
   int _totalPages = 1;
+  Timer? _searchDebounceTimer;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
     _loadCatalog();
+  }
+
+  @override
+  void dispose() {
+    _searchDebounceTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProfile() async {
@@ -73,8 +86,13 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
-  Future<void> _loadProducts({String? categorySlug, int? page}) async {
+  Future<void> _loadProducts({
+    String? categorySlug,
+    String? query,
+    int? page,
+  }) async {
     final nextCategory = categorySlug ?? _selectedCategorySlug;
+    final nextQuery = query ?? _searchQuery;
     final nextPage = page ?? _currentPage;
 
     setState(() {
@@ -85,12 +103,14 @@ class _HomeTabState extends State<HomeTab> {
     try {
       final result = await _shopService.fetchProducts(
         categorySlug: nextCategory == 'all' ? null : nextCategory,
+        query: nextQuery,
         page: nextPage + 1,
         limit: _pageSize,
       );
       if (!mounted) return;
       setState(() {
         _selectedCategorySlug = nextCategory;
+        _searchQuery = nextQuery;
         _currentPage = result.page - 1;
         _pageItems = result.items;
         _totalPages = result.totalPages;
@@ -107,6 +127,21 @@ class _HomeTabState extends State<HomeTab> {
 
   void _selectCategory(String slug) {
     _loadProducts(categorySlug: slug, page: 0);
+  }
+
+  void _handleSearchChanged(String value) {
+    setState(() {});
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(_searchDebounce, () {
+      if (!mounted) return;
+      _loadProducts(query: value.trim(), page: 0);
+    });
+  }
+
+  void _clearSearch() {
+    _searchDebounceTimer?.cancel();
+    _searchController.clear();
+    _loadProducts(query: '', page: 0);
   }
 
   void _changePage(int page) {
@@ -246,7 +281,6 @@ class _HomeTabState extends State<HomeTab> {
                 Expanded(
                   child: Container(
                     height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceContainerLowest,
                       borderRadius: BorderRadius.circular(16),
@@ -258,27 +292,41 @@ class _HomeTabState extends State<HomeTab> {
                         ),
                       ],
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.search, color: AppColors.primary),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            physics: const NeverScrollableScrollPhysics(),
-                            child: Text(
-                              t.t('home_search_hint'),
-                              maxLines: 1,
-                              overflow: TextOverflow.fade,
-                              softWrap: false,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: AppColors.outline,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: _handleSearchChanged,
+                      onSubmitted: (value) {
+                        _searchDebounceTimer?.cancel();
+                        _loadProducts(query: value.trim(), page: 0);
+                      },
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        hintText: t.t('home_search_hint'),
+                        hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.outline,
+                          fontSize: 16,
                         ),
-                      ],
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: AppColors.primary,
+                        ),
+                        suffixIcon:
+                            _searchQuery.isNotEmpty ||
+                                _searchController.text.trim().isNotEmpty
+                            ? IconButton(
+                                onPressed: _clearSearch,
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 13,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -346,7 +394,9 @@ class _HomeTabState extends State<HomeTab> {
               children: [
                 Expanded(
                   child: Text(
-                    t.t('popular_plants'),
+                    _searchQuery.isEmpty
+                        ? t.t('popular_plants')
+                        : 'Results for "$_searchQuery"',
                     style: theme.textTheme.headlineMedium?.copyWith(
                       color: AppColors.blackLight,
                       fontSize: 24,
@@ -378,9 +428,13 @@ class _HomeTabState extends State<HomeTab> {
                 ),
               ),
             ] else if (_pageItems.isEmpty) ...[
-              const _HomeMessageCard(
-                message: 'No products available for this category yet.',
-                icon: Icons.inventory_2_outlined,
+              _HomeMessageCard(
+                message: _searchQuery.isEmpty
+                    ? 'No products available for this category yet.'
+                    : 'No products found for "$_searchQuery".',
+                icon: _searchQuery.isEmpty
+                    ? Icons.inventory_2_outlined
+                    : Icons.search_off_outlined,
               ),
               const SizedBox(height: 24),
             ] else ...[

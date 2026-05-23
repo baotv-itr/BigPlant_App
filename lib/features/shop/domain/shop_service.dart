@@ -20,11 +20,13 @@ class ShopService {
 
   Future<ShopCatalogPage> fetchProducts({
     String? categorySlug,
+    String? query,
     required int page,
     required int limit,
   }) async {
     final response = await _api.fetchProducts(
       categorySlug: categorySlug,
+      query: query,
       page: page,
       limit: limit,
     );
