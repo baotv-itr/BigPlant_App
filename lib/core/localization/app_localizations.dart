@@ -64,7 +64,7 @@ class AppLocalizations {
       'settings_tab': 'Settings',
        'home_title': 'Discover Greenery',
        'home_subtitle': 'Pick healthy plants for your space',
-       'home_search_hint': 'Search plants, pots or accessories',
+       'home_search_hint': 'Search plants, pots',
        'popular_plants': 'Popular this week',
        'home_brand_title': 'BigPlant',
        'home_greeting_prefix': 'Good morning,',
@@ -281,6 +281,8 @@ class AppLocalizations {
       'auth_success_title': 'Success!',
       'auth_back_to_login': 'Back to Login',
       'auth_loading': 'Loading...',
+      'scan_success_title': 'Plant Identified',
+      'scan_success_badge': 'IDENTIFIED',
     },
     'vi': {
       'app_name': 'BigPlant',
@@ -340,7 +342,7 @@ class AppLocalizations {
       'settings_tab': 'Cài đặt',
        'home_title': 'Khám phá cây xanh',
        'home_subtitle': 'Chọn cây khỏe đẹp cho không gian của bạn',
-       'home_search_hint': 'Tìm cây, chậu hoặc phụ kiện',
+       'home_search_hint': 'Tìm kiếm cây, chậu',
        'popular_plants': 'Sản phẩm nổi bật tuần này',
        'home_brand_title': 'BigPlant',
        'home_greeting_prefix': 'Chào buổi sáng,',
@@ -559,6 +561,8 @@ class AppLocalizations {
       'auth_success_title': 'Thành công!',
       'auth_back_to_login': 'Quay lại Đăng nhập',
       'auth_loading': 'Loading...',
+      'scan_success_title': 'Đã nhận diện được cây',
+      'scan_success_badge': 'THÀNH CÔNG',
     },
   };
 

@@ -58,6 +58,44 @@ class ScanApi {
     }
   }
 
+  Future<Map<String, dynamic>> fetchPlantByLabel({
+    required String label,
+  }) async {
+    final token = await StorageService.getToken();
+    final uri = _buildUri().replace(queryParameters: {
+      'label': label,
+    });
+
+    try {
+      final response = await http.get(
+        uri,
+        headers: {
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 20));
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return _decode(response.body);
+      }
+
+      if (response.statusCode == 401) {
+        await AuthSessionManager.handleUnauthorized();
+      }
+
+      throw ApiException(
+        message: 'Fetch failed (${response.statusCode}): ${response.body}',
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(
+        message: 'Scan endpoint unreachable: $e',
+        statusCode: 500,
+      );
+    }
+  }
+
   Uri _buildUri() {
     final base = ApiConstants.baseUrl;
     final normalizedBase = base.endsWith('/') ? base : '$base/';

@@ -51,15 +51,17 @@ class _ScanTabState extends State<ScanTab> {
           builder: (_) => ScanResultScreen(
             imageBytes: bytes,
             result: result,
-            inferenceFramework: 'FloraEngine v1.0',
+            inferenceFramework: 'TensorRT',
           ),
         ),
       );
+      // Xoá ảnh preview khi quay về
+      if (mounted) setState(() => _previewBytes = null);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -68,9 +70,9 @@ class _ScanTabState extends State<ScanTab> {
   }
 
   Future<void> _openRealtimeCamera() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const CameraRealtimeScanScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const CameraRealtimeScanScreen()));
   }
 
   @override
@@ -90,28 +92,51 @@ class _ScanTabState extends State<ScanTab> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 120),
           children: [
-            RichText(
-              text: TextSpan(
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: AppColors.primary,
-                ),
-                children: [
-                  TextSpan(text: t.t('scan_intro_title_line_1')),
-                  TextSpan(
-                    text: '\n${t.t('scan_intro_title_line_2')}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: AppColors.secondary,
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.w400,
-                    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondaryContainer,
+                    shape: BoxShape.circle,
                   ),
-                ],
-              ),
+                  child: const Icon(
+                    Icons.energy_savings_leaf_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t.t('scan_intro_title_line_1'),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.secondary,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    Text(
+                      t.t('scan_intro_title_line_2'),
+                      style: theme.textTheme.headlineLarge?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
             const SizedBox(height: 28),
             _PreviewCard(
               previewBytes: _previewBytes,
               idleMessage: t.t('scan_camera_hint'),
+              loading: _loading,
             ),
             const SizedBox(height: 24),
             _ActionButton(
@@ -127,17 +152,6 @@ class _ScanTabState extends State<ScanTab> {
               filled: false,
               onPressed: _loading ? null : _pickAndScanFromGallery,
             ),
-            if (_loading) ...[
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: const LinearProgressIndicator(
-                  minHeight: 6,
-                  color: AppColors.primary,
-                  backgroundColor: AppColors.primaryFixed,
-                ),
-              ),
-            ],
             const SizedBox(height: 40),
             _TipsCard(
               title: t.t('scan_tips_title'),
@@ -162,20 +176,27 @@ class _ScanTabState extends State<ScanTab> {
 }
 
 class _PreviewCard extends StatelessWidget {
-  const _PreviewCard({required this.previewBytes, required this.idleMessage});
+  const _PreviewCard({
+    required this.previewBytes,
+    required this.idleMessage,
+    this.loading = false,
+  });
 
   final Uint8List? previewBytes;
   final String idleMessage;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 3 / 4,
+      aspectRatio: 5 / 6,
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerLowest.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.2)),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.2),
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withValues(alpha: 0.06),
@@ -240,38 +261,33 @@ class _PreviewCard extends StatelessWidget {
                         Text(
                           idleMessage,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppColors.onSurfaceVariant),
                         ),
                       ],
                     ),
                   ),
                 ),
               ],
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  height: 4,
-                  color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.33,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.primaryFixed, AppColors.primary],
-                        ),
-                        borderRadius: BorderRadius.horizontal(
-                          right: Radius.circular(999),
-                        ),
+              if (loading)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: SizedBox(
+                    height: 4,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
+                      ),
+                      child: const LinearProgressIndicator(
+                        backgroundColor: AppColors.surfaceContainerHighest,
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -329,10 +345,18 @@ class _CornerMarker extends StatelessWidget {
           bottomRight: !top && !left ? const Radius.circular(12) : Radius.zero,
         ),
         border: Border(
-          top: top ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
-          left: left ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
-          right: !left ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
-          bottom: !top ? const BorderSide(color: AppColors.primary, width: 2) : BorderSide.none,
+          top: top
+              ? const BorderSide(color: AppColors.primary, width: 2)
+              : BorderSide.none,
+          left: left
+              ? const BorderSide(color: AppColors.primary, width: 2)
+              : BorderSide.none,
+          right: !left
+              ? const BorderSide(color: AppColors.primary, width: 2)
+              : BorderSide.none,
+          bottom: !top
+              ? const BorderSide(color: AppColors.primary, width: 2)
+              : BorderSide.none,
         ),
       ),
     );
@@ -369,7 +393,9 @@ class _ActionButton extends StatelessWidget {
             backgroundColor: AppColors.surfaceContainerLowest,
             foregroundColor: AppColors.primary,
             minimumSize: const Size.fromHeight(56),
-            side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+            side: BorderSide(
+              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -377,11 +403,7 @@ class _ActionButton extends StatelessWidget {
 
     final child = Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon),
-        const SizedBox(width: 12),
-        Text(label),
-      ],
+      children: [Icon(icon), const SizedBox(width: 12), Text(label)],
     );
 
     return filled
@@ -422,7 +444,7 @@ class _TipsCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontSize: 24,
+                    fontSize: 20,
                     color: AppColors.primary,
                   ),
                 ),
@@ -489,11 +511,7 @@ class _TipRow extends StatelessWidget {
 }
 
 class _TipItem {
-  const _TipItem({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
+  const _TipItem({required this.icon, required this.title, required this.body});
 
   final IconData icon;
   final String title;
