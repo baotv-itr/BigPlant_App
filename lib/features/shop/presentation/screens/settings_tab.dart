@@ -282,7 +282,7 @@ class _SettingsProfileCard extends StatelessWidget {
                   initials,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: AppColors.primary,
-                    fontSize: 24,
+                    fontSize: 20,
                   ),
                 ),
               ),
@@ -295,7 +295,7 @@ class _SettingsProfileCard extends StatelessWidget {
                       displayName,
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         color: AppColors.primary,
-                        fontSize: 24,
+                        fontSize: 20,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -303,6 +303,7 @@ class _SettingsProfileCard extends StatelessWidget {
                       email,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.onSurfaceVariant,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -350,6 +351,7 @@ class _ToggleSettingRow extends StatelessWidget {
                   title,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppColors.onSurface,
+                    fontSize: 16,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -358,6 +360,7 @@ class _ToggleSettingRow extends StatelessWidget {
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: AppColors.onSurfaceVariant,
                     fontWeight: FontWeight.w400,
+                    fontSize: 14,
                   ),
                 ),
               ],
@@ -422,6 +425,7 @@ class _NavigationSettingRow extends StatelessWidget {
                       title,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.onSurface,
+                        fontSize: 16,
                       ),
                     ),
                     if ((subtitle ?? '').trim().isNotEmpty) ...[
@@ -431,6 +435,7 @@ class _NavigationSettingRow extends StatelessWidget {
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: AppColors.onSurfaceVariant,
                           fontWeight: FontWeight.w400,
+                          fontSize: 14,
                         ),
                       ),
                     ],
@@ -445,6 +450,7 @@ class _NavigationSettingRow extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: AppColors.onSurfaceVariant,
                       fontWeight: FontWeight.w400,
+                      fontSize: 14,
                     ),
                   ),
                 ),

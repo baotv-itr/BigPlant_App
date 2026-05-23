@@ -75,39 +75,42 @@ class _CartTabState extends State<CartTab> {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-
-    return DecoratedBox(
-      decoration: const BoxDecoration(color: AppColors.surface),
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 120),
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(t.t('home_menu_coming_soon'))),
-                  ),
-                  icon: const Icon(Icons.menu, color: AppColors.primary),
-                ),
-                Expanded(
-                  child: Text(
-                    'BigPlant',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      color: AppColors.primary,
-                      fontStyle: FontStyle.italic,
-                      fontSize: 24,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(_fullName.isEmpty ? t.t('home_account_coming_soon') : _fullName)),
-                  ),
-                  icon: const Icon(Icons.account_circle_outlined, color: AppColors.primary),
-                ),
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 120),
+        children: [
+          Text(
+            t.t('cart_title'),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 16),
+          const _CartItemTile(
+            name: 'Monstera Planto',
+            variant: '18cm pot',
+            price: 32.0,
+            quantity: 1,
+          ),
+          const _CartItemTile(
+            name: 'Ceramic Pot - Sand',
+            variant: 'Medium',
+            price: 15.0,
+            quantity: 2,
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.cardBorder),
+            ),
+            child: Column(
+              children: const [
+                _PriceRow(label: 'Subtotal', value: '\$62.00'),
+                SizedBox(height: 8),
+                _PriceRow(label: 'Delivery', value: '\$4.00'),
+                Divider(height: 24, color: AppColors.cardBorder),
+                _PriceRow(label: 'Total', value: '\$66.00', isTotal: true),
               ],
             ),
             const SizedBox(height: 16),
@@ -280,20 +283,34 @@ class _CartItemCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
                 Text(
-                  item.product.name,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: AppColors.onSurface,
-                  ),
+                  variant,
+                  style: const TextStyle(color: AppColors.darkGrey),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  item.variant.potStyle.isNotEmpty
-                      ? 'Chậu ${item.variant.potStyle}'
-                      : item.variant.variantName,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.outline,
-                  ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '\$${price.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.leafGreenDark,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.cardBorder),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -404,7 +421,10 @@ class _SummaryRow extends StatelessWidget {
           );
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [Text(label, style: labelStyle), Text(value, style: valueStyle)],
+      children: [
+        Text(label, style: style),
+        Text(value, style: style),
+      ],
     );
   }
 }

@@ -59,6 +59,33 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> put(
+    String url, {
+    required Map<String, dynamic> body,
+    Map<String, String>? headers,
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    final mergedHeaders = {'Content-Type': 'application/json', ...?headers};
+    try {
+      final response = await http
+          .put(Uri.parse(url), headers: mergedHeaders, body: jsonEncode(body))
+          .timeout(timeout);
+      return await _decodeResponse(response);
+    } on TimeoutException {
+      throw ApiException(
+        message: 'Request timed out after ${timeout.inSeconds}s',
+        statusCode: 408,
+      );
+    } on SocketException {
+      throw ApiException(
+        message: 'Network unreachable. Check server and adb reverse mapping.',
+        statusCode: 503,
+      );
+    } on http.ClientException catch (e) {
+      throw ApiException(message: 'HTTP client error: $e', statusCode: 500);
+    }
+  }
+
   Future<Map<String, dynamic>> _decodeResponse(http.Response response) async {
     Map<String, dynamic> body;
     try {

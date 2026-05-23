@@ -15,11 +15,13 @@ class PlantScanResult {
     required this.toxicityWarning,
     required this.safetyNotes,
     required this.evidenceLevel,
-    required this.source,
+    this.source = const {},
     required this.note,
     required this.distributionAreas,
     required this.distributionPoints,
     this.confidence,
+    this.modelName,
+    this.backend,
   });
 
   final String displayName;
@@ -37,50 +39,30 @@ class PlantScanResult {
   final String toxicityWarning;
   final String safetyNotes;
   final String evidenceLevel;
-  final String source;
+  final Map<String, String> source;
   final String note;
   final List<String> distributionAreas;
   final List<PlantDistributionPoint> distributionPoints;
   final double? confidence;
-
-  List<String> get sourceTokens => source
-      .split(',')
-      .map((item) => item.trim())
-      .where((item) => item.isNotEmpty)
-      .toList(growable: false);
+  final String? modelName;
+  final String? backend;
 
   String sourceForField(String fieldKey) {
-    final tokens = sourceTokens;
-    if (tokens.isEmpty) return '';
+    final raw = source[fieldKey]?.trim() ?? '';
+    if (raw.isEmpty) return '';
 
-    final orderedFields = <MapEntry<String, String>>[
-      MapEntry('scientific_name', scientificName),
-      MapEntry('scientific_name_search', scientificNameSearch),
-      MapEntry('common_name', commonName),
-      MapEntry('family', family),
-      MapEntry('taxonomic_order', order),
-      MapEntry('genus', genus),
-      MapEntry('species', species),
-      MapEntry('taxonomic_status', taxonomicStatus),
-      MapEntry('uses', uses),
-      MapEntry('advantages', advantages),
-      MapEntry('description', description),
-      MapEntry('toxicity_warning', toxicityWarning),
-      MapEntry('safety_notes', safetyNotes),
-      MapEntry('evidence_level', evidenceLevel),
-    ];
-
-    var tokenIndex = 0;
-    for (final entry in orderedFields) {
-      if (entry.value.trim().isEmpty) continue;
-      if (tokenIndex >= tokens.length) break;
-      if (entry.key == fieldKey) {
-        return tokens[tokenIndex];
-      }
-      tokenIndex++;
+    // Strip common messy patterns like "FIELD_NAME: {SOURCE}" or "[SOURCE]"
+    // Example: "EVIDENCE_LEVEL: {PUBMED}" -> "PUBMED"
+    String cleaned = raw;
+    final colonIndex = cleaned.indexOf(':');
+    if (colonIndex != -1) {
+      cleaned = cleaned.substring(colonIndex + 1).trim();
     }
-
-    return '';
+    
+    // Remove wrapping characters like { } or [ ]
+    cleaned = cleaned.replaceAll(RegExp(r'[{}[\]]'), '').trim();
+    
+    return cleaned;
   }
 
   factory PlantScanResult.fromApi(Map<String, dynamic> json) {
@@ -163,7 +145,14 @@ class PlantScanResult {
         ]),
       ),
       confidence: _asDouble(
-        _pickValue(source, const ['confidence', 'score', 'probability']),
+        _pickValue(_toMap(json['detect_result']?['pred']), const ['confidence', 'score', 'probability']) ??
+            _pickValue(source, const ['confidence', 'score', 'probability']),
+      ),
+      modelName: _stringOrEmpty(
+        _pickValue(_toMap(json['detect_result']?['meta']?['model']), const ['model_name', 'name']),
+      ),
+      backend: _stringOrEmpty(
+        _pickValue(_toMap(json['detect_result']?['meta']?['model']), const ['backend', 'framework']),
       ),
       toxicityWarning: _stringOrEmpty(
         _pickValue(source, const ['toxicity_warning', 'toxicity_warning_text']),
@@ -174,7 +163,7 @@ class PlantScanResult {
       evidenceLevel: _stringOrEmpty(
         _pickValue(source, const ['evidence_level', 'evidence']),
       ),
-      source: _stringOrEmpty(_pickValue(source, const ['source'])),
+      source: _parseSourceMap(_pickValue(source, const ['source'])),
       note: _stringOrEmpty(noteRaw),
       distributionAreas: areas,
       distributionPoints: points,
@@ -207,6 +196,20 @@ class PlantScanResult {
       return raw.whereType<String>().map((e) => e.trim()).join(', ');
     }
     return raw.toString().trim();
+  }
+
+  static Map<String, String> _parseSourceMap(dynamic raw) {
+    if (raw is Map) {
+      final result = <String, String>{};
+      for (final entry in raw.entries) {
+        final val = entry.value?.toString().trim() ?? '';
+        if (val.isNotEmpty) {
+          result[entry.key.toString()] = val;
+        }
+      }
+      return result;
+    }
+    return const {};
   }
 
   static double? _asDouble(dynamic raw) {

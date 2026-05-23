@@ -132,4 +132,26 @@ class AuthService {
       return false;
     }
   }
+
+  Future<void> updateProfile({
+    String? fullName,
+    String? phoneNumber,
+    String? dateOfBirth,
+    String? gender,
+  }) async {
+    final token = await StorageService.getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Authentication token not found');
+    }
+
+    final response = await _authApi.updateProfile(
+      token: token,
+      fullName: fullName,
+      phoneNumber: phoneNumber,
+      dateOfBirth: dateOfBirth,
+      gender: gender,
+    );
+
+    await _persistAuthResponse(response);
+  }
 }

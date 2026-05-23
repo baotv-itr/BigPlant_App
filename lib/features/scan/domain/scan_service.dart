@@ -41,6 +41,40 @@ class ScanService {
       evidenceLevel: result.evidenceLevel,
       source: result.source,
       confidence: result.confidence,
+      modelName: result.modelName,
+      backend: result.backend,
+      distributionAreas: result.distributionAreas,
+      distributionPoints: result.distributionPoints,
+      note: const JsonEncoder.withIndent('  ').convert(response),
+    );
+  }
+
+  Future<PlantScanResult> scanPlantByLabel({
+    required String label,
+  }) async {
+    final response = await _api.fetchPlantByLabel(label: label);
+    final result = PlantScanResult.fromApi(response);
+
+    return PlantScanResult(
+      displayName: result.displayName,
+      scientificName: result.scientificName,
+      scientificNameSearch: result.scientificNameSearch,
+      commonName: result.commonName,
+      family: result.family,
+      order: result.order,
+      genus: result.genus,
+      species: result.species,
+      taxonomicStatus: result.taxonomicStatus,
+      uses: result.uses,
+      advantages: result.advantages,
+      description: result.description,
+      toxicityWarning: result.toxicityWarning,
+      safetyNotes: result.safetyNotes,
+      evidenceLevel: result.evidenceLevel,
+      source: result.source,
+      confidence: result.confidence,
+      modelName: result.modelName,
+      backend: result.backend,
       distributionAreas: result.distributionAreas,
       distributionPoints: result.distributionPoints,
       note: const JsonEncoder.withIndent('  ').convert(response),

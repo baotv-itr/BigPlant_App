@@ -347,7 +347,7 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
           builder: (_) => ScanResultScreen(
             imageBytes: bytes,
             result: result,
-            inferenceFramework: 'FloraEngine v1.0',
+            inferenceFramework: 'TensorRT',
           ),
         ),
       );
@@ -409,8 +409,9 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
       toxicityWarning: '',
       safetyNotes: '',
       evidenceLevel: '',
-      source: '',
       confidence: prediction.confidence,
+      modelName: prediction.modelId,
+      backend: 'ONNX Runtime',
       distributionAreas: const [],
       distributionPoints: const [],
       note: 'Local ONNX model: ${prediction.modelId}\nTop-5:\n$topkText',
@@ -424,7 +425,8 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
               result: result,
               fetchDetailsFromApi: true,
               detailFetchFileName: detailFetchFileName,
-              inferenceFramework: 'FloraEngine v1.0',
+              plantLabel: prediction.label,
+              inferenceFramework: 'ONNX Runtime',
             ),
           ),
         )
@@ -546,7 +548,9 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
                 _TargetFrame(),
                 const Spacer(),
                 _CompactPredictionCard(
-                  title: _latestResult?.label ?? t.t('scan_pending_prediction_title'),
+                  title: _latestResult == null
+                      ? t.t('scan_pending_prediction_title')
+                      : _formatPlantLabel(_latestResult!.label),
                   subtitle: _latestResult == null
                       ? t.t('scan_pending_prediction_subtitle')
                       : t.t('scan_pending_prediction_ready'),
@@ -640,6 +644,19 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
         ),
         Align(
           alignment: Alignment.bottomCenter,
+          child: TweenAnimationBuilder<Offset>(
+            tween: Tween(
+            begin: const Offset(0, 1),
+            end: Offset.zero,
+          ),
+          duration: const Duration(milliseconds: 480),
+          curve: Curves.easeOutCubic,
+          builder: (context, offset, child) {
+            return FractionalTranslation(
+              translation: offset,
+              child: child,
+            );
+          },
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
@@ -678,13 +695,13 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
                 _CaptureSummaryCard(
                   icon: Icons.timer,
                   label: t.t('scan_latency_label'),
-                  value: '${_lastInferLatencyMs}ms',
+                  value: '${_lastInferLatencyMs} ms',
                 ),
                 const SizedBox(height: 16),
                 _CaptureSummaryCard(
                   icon: Icons.memory,
                   label: t.t('scan_identified_plant_label'),
-                  value: prediction.label,
+                  value: _formatPlantLabel(prediction.label),
                 ),
                 const SizedBox(height: 28),
                 ElevatedButton(
@@ -711,6 +728,7 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
               ],
             ),
           ),
+        ),
         ),
       ],
     );
@@ -749,16 +767,25 @@ class _CameraRealtimeScanScreenState extends State<CameraRealtimeScanScreen> {
   String _friendlyModelLabel(String? modelId) {
     switch (modelId) {
       case 'mobilenetv3large_segformer':
-        return 'Botanical-V2';
+        return 'MobileNetV3 Seg';
       case 'efficientnetv2_segformer':
-        return 'EcoLens-S';
+        return 'EfficientNetV2 Seg';
       case 'efficientnetv2_mask2former':
-        return 'Segment-Expert';
+        return 'EfficientNetV2 M2F';
       case 'organ_aware_switch_vit':
-        return 'FloraSwitch-ViT';
+        return 'Organ Aware ViT';
       default:
         return modelId ?? 'Botanical-V2';
     }
+  }
+
+  static String _formatPlantLabel(String raw) {
+    return raw
+        .split('_')
+        .map((word) => word.isEmpty
+            ? word
+            : '${word[0].toUpperCase()}${word.substring(1)}')
+        .join(' ');
   }
 }
 
@@ -949,8 +976,7 @@ class _CompactPredictionCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: AppColors.primary,
-                    fontStyle: FontStyle.italic,
-                    fontSize: 24,
+                    fontSize: 20,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1077,6 +1103,8 @@ class _CaptureSummaryCard extends StatelessWidget {
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: AppColors.onSurfaceVariant,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -1086,7 +1114,7 @@ class _CaptureSummaryCard extends StatelessWidget {
             value,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               color: AppColors.primary,
-              fontSize: 28,
+              fontSize: 22,
             ),
           ),
         ],

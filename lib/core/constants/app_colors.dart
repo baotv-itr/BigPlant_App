@@ -14,7 +14,10 @@ class AppColors {
   static const Color primaryFixedDim = Color(0xFF95D4B3);
   static const Color secondary = Color(0xFF3F6653);
   static const Color secondaryContainer = Color(0xFFBEEAD1);
+  static const Color secondaryFixed = Color(0xFFD7F5E3);
   static const Color tertiary = Color(0xFF364D3C);
+  static const Color onPrimary = Color(0xFFFFFFFF);
+  static const Color onSecondaryContainer = Color(0xFF0B2118);
   static const Color surface = Color(0xFFF8FAF9);
   static const Color surfaceBright = Color(0xFFF8FAF9);
   static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
@@ -28,6 +31,7 @@ class AppColors {
   static const Color onSurfaceVariant = Color(0xFF404943);
   static const Color outline = Color(0xFF707973);
   static const Color outlineVariant = Color(0xFFBFC9C1);
+  static const Color outlineSource = Color.fromARGB(255, 232, 235, 234);
   static const Color error = Color(0xFFBA1A1A);
   static const Color errorContainer = Color(0xFFFFDAD6);
 

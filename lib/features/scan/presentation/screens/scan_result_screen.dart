@@ -17,6 +17,7 @@ class ScanResultScreen extends StatefulWidget {
     required this.result,
     this.fetchDetailsFromApi = false,
     this.detailFetchFileName = 'camera_scan.jpg',
+    this.plantLabel,
     this.inferenceFramework,
     super.key,
   });
@@ -25,6 +26,7 @@ class ScanResultScreen extends StatefulWidget {
   final PlantScanResult result;
   final bool fetchDetailsFromApi;
   final String detailFetchFileName;
+  final String? plantLabel;
   final String? inferenceFramework;
 
   static String valueOrPlaceholder(String value) {
@@ -44,6 +46,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   bool _ttsReady = false;
   bool _fetchingDetails = false;
   bool _technicalExpanded = false;
+  bool _successBannerVisible = false;
   String? _fetchError;
   PlantScanResult? _fetchedDetails;
 
@@ -54,6 +57,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     if (widget.fetchDetailsFromApi) {
       _fetchDetailsFromApi();
     }
+    _showSuccessBanner();
   }
 
   @override
@@ -62,12 +66,35 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     super.dispose();
   }
 
+  void _showSuccessBanner() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _successBannerVisible = true);
+      Future.delayed(const Duration(milliseconds: 3000), () {
+        if (mounted) setState(() => _successBannerVisible = false);
+      });
+    });
+  }
+
   PlantScanResult get _contentResult => _fetchedDetails ?? widget.result;
 
   String get _frameworkLabel {
     final explicit = widget.inferenceFramework?.trim() ?? '';
     if (explicit.isNotEmpty) return explicit;
-    return widget.fetchDetailsFromApi ? 'FloraEngine v1.0' : 'FloraEngine v1.0';
+
+    final initialBackend = widget.result.backend?.trim() ?? '';
+    if (initialBackend.isNotEmpty) {
+      if (initialBackend.toLowerCase() == 'tensorrt') return 'TensorRT';
+      return initialBackend;
+    }
+
+    final apiBackend = _fetchedDetails?.backend?.trim() ?? '';
+    if (apiBackend.isNotEmpty) {
+      if (apiBackend.toLowerCase() == 'tensorrt') return 'TensorRT';
+      return apiBackend;
+    }
+
+    return 'TensorRT';
   }
 
   Future<void> _fetchDetailsFromApi() async {
@@ -76,10 +103,13 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       _fetchError = null;
     });
     try {
-      final apiResult = await _scanService.scanPlant(
-        imageBytes: widget.imageBytes,
-        fileName: widget.detailFetchFileName,
-      );
+      final apiResult =
+          widget.plantLabel != null && widget.plantLabel!.isNotEmpty
+          ? await _scanService.scanPlantByLabel(label: widget.plantLabel!)
+          : await _scanService.scanPlant(
+              imageBytes: widget.imageBytes,
+              fileName: widget.detailFetchFileName,
+            );
       if (!mounted) return;
       setState(() {
         _fetchedDetails = apiResult;
@@ -207,7 +237,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
 
     Clipboard.setData(ClipboardData(text: payload));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context).t('toast_saved_clipboard'))),
+      SnackBar(
+        content: Text(AppLocalizations.of(context).t('toast_saved_clipboard')),
+      ),
     );
   }
 
@@ -221,7 +253,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
       body: Stack(
         children: [
           ListView(
-            padding: const EdgeInsets.fromLTRB(24, 88, 24, 120),
+            padding: const EdgeInsets.fromLTRB(24, 100, 24, 120),
             children: [
               _HeroSection(
                 imageBytes: widget.imageBytes,
@@ -229,7 +261,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 title: _primaryDisplayTitle(plant),
                 subtitle: _secondaryDisplayTitle(plant),
                 frameworkLabel: _frameworkLabel,
-                confidence: plant.confidence,
+                modelLabel:
+                    widget.result.modelName ?? _fetchedDetails?.modelName,
+                confidence:
+                    widget.result.confidence ?? _fetchedDetails?.confidence,
               ),
               const SizedBox(height: 24),
               if (_fetchingDetails) ...[
@@ -251,16 +286,51 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 title: t.t('plant_section_ecology'),
                 icon: Icons.eco,
                 source: plant.sourceForField('description'),
-                child: Text(
-                  ScanResultScreen.valueOrPlaceholder(plant.description),
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    height: 1.8,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children:
+                      ScanResultScreen.valueOrPlaceholder(plant.description)
+                          .split('\n')
+                          .map((line) => line.trim())
+                          .where((line) => line.isNotEmpty)
+                          .map(
+                            (line) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Text(
+                                line,
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: AppColors.onSurfaceVariant,
+                                      height: 1.5,
+                                      fontSize: 15,
+                                    ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _PlantSectionCard(
+                title: t.t('plant_section_taxonomy'),
+                icon: Icons.account_tree,
+                child: Column(
+                  children: _taxonomyRows(
+                    t,
+                    plant,
+                  ).map((row) => _TaxonomyRow(item: row)).toList(),
                 ),
               ),
               const SizedBox(height: 24),
               _EvidenceSafetyCard(plant: plant),
+              const SizedBox(height: 24),
+              _UtilityBenefitsCard(items: _benefitItems(t, plant)),
+              const SizedBox(height: 24),
+              _DistributionCard(
+                plant: plant,
+                onOpenMap: () => _openExpandedMap(context),
+                onOpenDetails: () => _showDistributionDetails(context),
+              ),
               const SizedBox(height: 24),
               _TechnicalMetadataCard(
                 expanded: _technicalExpanded,
@@ -272,30 +342,26 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   });
                 },
               ),
-              const SizedBox(height: 24),
-              _PlantSectionCard(
-                title: t.t('plant_section_taxonomy'),
-                icon: Icons.account_tree,
-                child: Column(
-                  children: _taxonomyRows(t, plant)
-                      .map((row) => _TaxonomyRow(item: row))
-                      .toList(),
-                ),
-              ),
-              const SizedBox(height: 24),
-              _UtilityBenefitsCard(items: _benefitItems(t, plant)),
-              const SizedBox(height: 24),
-              _DistributionCard(
-                plant: plant,
-                onOpenMap: () => _openExpandedMap(context),
-                onOpenDetails: () => _showDistributionDetails(context),
-              ),
             ],
           ),
-          _PlantDetailTopBar(
-            title: t.t('plant_report_title'),
-            onBack: () => Navigator.of(context).pop(),
-            onShare: _sharePlantDetail,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _PlantDetailTopBar(
+              title: t.t('plant_report_title'),
+              onBack: () => Navigator.of(context).pop(),
+              onShare: _sharePlantDetail,
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _ScanSuccessBanner(
+              visible: _successBannerVisible,
+              plantName: _primaryDisplayTitle(plant),
+            ),
           ),
         ],
       ),
@@ -314,7 +380,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
 
   String _secondaryDisplayTitle(PlantScanResult plant) {
     final common = plant.commonName.trim();
-    if (common.isNotEmpty) return common;
+    if (common.isNotEmpty) {
+      // Return only the first name if multiple are separated by semicolons
+      return common.split(';').first.trim();
+    }
     final display = plant.displayName.trim();
     if (display.isNotEmpty && display != plant.scientificName.trim()) {
       return display;
@@ -341,16 +410,13 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     return const JsonEncoder.withIndent('  ').convert(data);
   }
 
-  List<_TaxonomyItem> _taxonomyRows(
-    AppLocalizations t,
-    PlantScanResult plant,
-  ) {
+  List<_TaxonomyItem> _taxonomyRows(AppLocalizations t, PlantScanResult plant) {
     return [
       _TaxonomyItem(
         label: t.t('field_scientific_name'),
         value: plant.scientificName,
         source: plant.sourceForField('scientific_name'),
-        italic: true,
+        italic: false,
       ),
       _TaxonomyItem(
         label: t.t('field_family'),
@@ -366,26 +432,23 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         label: t.t('field_genus'),
         value: plant.genus,
         source: plant.sourceForField('genus'),
-        italic: true,
+        italic: false,
       ),
       _TaxonomyItem(
         label: t.t('field_species'),
         value: plant.species,
         source: plant.sourceForField('species'),
-        italic: true,
+        italic: false,
       ),
       _TaxonomyItem(
         label: t.t('plant_taxonomic_status_label'),
-        value: _prettifyLabel(plant.taxonomicStatus),
+        value: plant.taxonomicStatus.toLowerCase(),
         source: plant.sourceForField('taxonomic_status'),
       ),
     ].where((item) => item.value.trim().isNotEmpty).toList();
   }
 
-  List<_BenefitItem> _benefitItems(
-    AppLocalizations t,
-    PlantScanResult plant,
-  ) {
+  List<_BenefitItem> _benefitItems(AppLocalizations t, PlantScanResult plant) {
     final items = <_BenefitItem>[];
 
     if (plant.uses.trim().isNotEmpty) {
@@ -428,8 +491,11 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     if (raw.isEmpty) return raw;
     return raw
         .split(RegExp(r'[_\s]+'))
-        .map((part) =>
-            part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+        .map(
+          (part) => part.isEmpty
+              ? part
+              : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+        )
         .join(' ');
   }
 
@@ -493,10 +559,11 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                       Expanded(
                         child: Text(
                           t.t('distribution_detail_title'),
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: AppColors.primary,
-                            fontSize: 24,
-                          ),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 24,
+                              ),
                         ),
                       ),
                       Material(
@@ -518,7 +585,10 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                     ],
                   ),
                 ),
-                const Divider(height: 1, color: AppColors.surfaceContainerHighest),
+                const Divider(
+                  height: 1,
+                  color: AppColors.surfaceContainerHighest,
+                ),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
@@ -569,34 +639,36 @@ class _PlantDetailTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLow.withValues(alpha: 0.9),
-          border: Border(
-            bottom: BorderSide(
-              color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            _TopActionButton(icon: Icons.arrow_back, onTap: onBack),
-            Expanded(
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 24,
-                ),
+    return Container(
+      color: AppColors.surfaceContainerLow,
+      child: SafeArea(
+        bottom: false,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow,
+            border: Border(
+              bottom: BorderSide(
+                color: AppColors.surfaceContainerHighest.withValues(alpha: 0.5),
               ),
             ),
-            _TopActionButton(icon: Icons.share, onTap: onShare),
-          ],
+          ),
+          child: Row(
+            children: [
+              _TopActionButton(icon: Icons.arrow_back, onTap: onBack),
+              Expanded(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+              _TopActionButton(icon: Icons.share, onTap: onShare),
+            ],
+          ),
         ),
       ),
     );
@@ -634,6 +706,7 @@ class _HeroSection extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.frameworkLabel,
+    this.modelLabel,
     required this.confidence,
   });
 
@@ -642,6 +715,7 @@ class _HeroSection extends StatelessWidget {
   final String title;
   final String subtitle;
   final String frameworkLabel;
+  final String? modelLabel;
   final double? confidence;
 
   @override
@@ -654,13 +728,16 @@ class _HeroSection extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Image.memory(imageBytes, fit: BoxFit.cover),
-            const DecoratedBox(
+            DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0xCC000000)],
-                  stops: [0.35, 1],
+                  colors: [
+                    Colors.black.withValues(alpha: 0.2),
+                    Colors.black.withValues(alpha: 0.85),
+                  ],
+                  stops: const [0.0, 1.0],
                 ),
               ),
             ),
@@ -673,10 +750,18 @@ class _HeroSection extends StatelessWidget {
                 children: [
                   if (familyLabel.trim().isNotEmpty)
                     Text(
-                      '$familyLabel Family',
+                      '${familyLabel.toUpperCase()} FAMILY',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: AppColors.primaryFixed,
                         letterSpacing: 2.8,
+                        fontWeight: FontWeight.w800,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                     ),
                   const SizedBox(height: 4),
@@ -684,21 +769,35 @@ class _HeroSection extends StatelessWidget {
                     title,
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       color: AppColors.white,
-                      fontStyle: FontStyle.italic,
                       fontSize: 40,
                       height: 1.1,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                   ),
                   if (subtitle.trim().isNotEmpty) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 12),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.white.withValues(alpha: 0.8),
+                        color: AppColors.white.withValues(alpha: 0.9),
+                        fontSize: 16,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 38),
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
@@ -706,6 +805,13 @@ class _HeroSection extends StatelessWidget {
                       _HeroChip(
                         icon: Icons.psychology,
                         label: frameworkLabel,
+                        dark: true,
+                      ),
+                      _HeroChip(
+                        icon: Icons.psychology,
+                        label: (modelLabel != null && modelLabel!.isNotEmpty)
+                            ? modelLabel!
+                            : 'Standard Model',
                         dark: true,
                       ),
                       _HeroChip(
@@ -741,7 +847,7 @@ class _HeroChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
       decoration: BoxDecoration(
         color: dark ? Colors.white.withValues(alpha: 0.1) : AppColors.primary,
         borderRadius: BorderRadius.circular(999),
@@ -760,6 +866,7 @@ class _HeroChip extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: AppColors.white,
+              fontSize: 13,
             ),
           ),
         ],
@@ -782,10 +889,7 @@ class _InlineWarning extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFFFD8A8)),
       ),
-      child: Text(
-        message,
-        style: const TextStyle(color: Color(0xFF8A4B00)),
-      ),
+      child: Text(message, style: const TextStyle(color: Color(0xFF8A4B00))),
     );
   }
 }
@@ -849,7 +953,8 @@ class _PlantSectionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if ((source ?? '').trim().isNotEmpty) _SourceBadge(source: source!),
+              if ((source ?? '').trim().isNotEmpty)
+                _SourceBadge(source: source!),
             ],
           ),
           const SizedBox(height: 24),
@@ -865,19 +970,32 @@ class _SourceBadge extends StatelessWidget {
 
   final String source;
 
+  String get _displaySource {
+    final cleaned = source.trim();
+    if (cleaned.isEmpty) return cleaned;
+    return cleaned.split('_').first.trim();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final label = _displaySource;
+    if (label.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHighest,
+        color: AppColors.outlineSource,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        source.toUpperCase(),
+        label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.onSurfaceVariant,
-          fontWeight: FontWeight.w700,
+          color: AppColors.primary,
+          fontWeight: FontWeight.w800,
+          fontSize: 10,
+          letterSpacing: 0.5,
         ),
       ),
     );
@@ -910,28 +1028,57 @@ class _EvidenceSafetyCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.secondaryContainer,
-              borderRadius: BorderRadius.circular(999),
+          if (plant.evidenceLevel.trim().isEmpty)
+            Text(
+              t.t('plant_evidence_unknown'),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: plant.evidenceLevel
+                  .split(';')
+                  .map((e) => e.trim())
+                  .where((e) => e.isNotEmpty)
+                  .map(
+                    (e) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.fact_check,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _prettyEnum(e),
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.fact_check, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  plant.evidenceLevel.trim().isEmpty
-                      ? t.t('plant_evidence_unknown')
-                      : _prettyEnum(plant.evidenceLevel),
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 20),
           if (plant.toxicityWarning.trim().isNotEmpty)
             _DangerInfoCard(
@@ -942,7 +1089,8 @@ class _EvidenceSafetyCard extends StatelessWidget {
               titleColor: AppColors.error,
               content: plant.toxicityWarning,
             ),
-          if (plant.toxicityWarning.trim().isNotEmpty) const SizedBox(height: 16),
+          if (plant.toxicityWarning.trim().isNotEmpty)
+            const SizedBox(height: 16),
           if (plant.safetyNotes.trim().isNotEmpty)
             _DangerInfoCard(
               title: t.t('plant_safety_notes_title'),
@@ -961,8 +1109,11 @@ class _EvidenceSafetyCard extends StatelessWidget {
   String _prettyEnum(String value) {
     return value
         .split(RegExp(r'[_\s]+'))
-        .map((part) =>
-            part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}')
+        .map(
+          (part) => part.isEmpty
+              ? part
+              : '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}',
+        )
         .join(' ');
   }
 }
@@ -1022,14 +1173,19 @@ class _DangerInfoCard extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('• ', style: TextStyle(color: AppColors.onSurfaceVariant)),
+                          const Text(
+                            '• ',
+                            style: TextStyle(color: AppColors.onSurfaceVariant),
+                          ),
                           Expanded(
                             child: Text(
                               line,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.onSurfaceVariant,
-                                height: 1.6,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: AppColors.onSurfaceVariant,
+                                    height: 1.6,
+                                    fontSize: 14,
+                                  ),
                             ),
                           ),
                         ],
@@ -1044,6 +1200,7 @@ class _DangerInfoCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.onSurfaceVariant,
                 height: 1.6,
+                fontSize: 14,
               ),
             ),
         ],
@@ -1158,46 +1315,82 @@ class _TaxonomyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              item.label.toUpperCase(),
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.onSurfaceVariant,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                item.label.toUpperCase(),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              if (item.source.trim().isNotEmpty)
+                _SourceBadge(source: item.source),
+            ],
+          ),
+          const SizedBox(height: 6),
+          if (item.label ==
+              AppLocalizations.of(context).t('plant_taxonomic_status_label'))
+            _StatusTag(status: item.value)
+          else
+            Text(
+              item.value,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppColors.onSurface,
                 fontWeight: FontWeight.w600,
-                letterSpacing: 1.2,
+                fontSize: 16,
               ),
             ),
-          ),
-          Expanded(
-            child: Wrap(
-              alignment: WrapAlignment.end,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  item.value,
-                  textAlign: TextAlign.right,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.onSurface,
-                    fontWeight: FontWeight.w600,
-                    fontStyle: item.italic ? FontStyle.italic : FontStyle.normal,
-                  ),
-                ),
-                if (item.source.trim().isNotEmpty)
-                  Text(
-                    ' [${item.source.toLowerCase()}]',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.outline,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-              ],
-            ),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusTag extends StatelessWidget {
+  const _StatusTag({required this.status});
+  final String status;
+
+  Color _getStatusColor() {
+    switch (status.toLowerCase()) {
+      case 'accepted':
+        return const Color(0xFF2E7D32); // Green
+      case 'synonym':
+        return const Color(0xFFF57C00); // Orange
+      case 'ambiguous':
+        return const Color(0xFF7B1FA2); // Purple
+      case 'unmatched':
+        return const Color(0xFFD32F2F); // Red
+      case 'unknown':
+      default:
+        return const Color(0xFF616161); // Grey
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _getStatusColor();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w800,
+          fontSize: 12,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -1297,11 +1490,22 @@ class _BenefitTile extends StatelessWidget {
                 ),
               ),
               if (item.source.trim().isNotEmpty)
-                Text(
-                  '[${item.source.toLowerCase()}]',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontWeight: FontWeight.w700,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(210, 255, 255, 255),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    item.source.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 10,
+                    ),
                   ),
                 ),
             ],
@@ -1313,12 +1517,27 @@ class _BenefitTile extends StatelessWidget {
               Icon(item.icon, color: AppColors.white),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  item.description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    height: 1.5,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: item.description
+                      .split('\n')
+                      .map((line) => line.trim())
+                      .where((line) => line.isNotEmpty)
+                      .map(
+                        (line) => Padding(
+                          padding: const EdgeInsets.only(bottom: 7),
+                          child: Text(
+                            line,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  height: 1.5,
+                                  fontSize: 13,
+                                ),
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
             ],
@@ -1368,7 +1587,9 @@ class _DistributionCard extends StatelessWidget {
                       if (hasMap)
                         FlutterMap(
                           options: MapOptions(
-                            initialCenter: _centerPoint(plant.distributionPoints),
+                            initialCenter: _centerPoint(
+                              plant.distributionPoints,
+                            ),
                             initialZoom: 2.8,
                             interactionOptions: const InteractionOptions(
                               flags: InteractiveFlag.none,
@@ -1376,7 +1597,8 @@ class _DistributionCard extends StatelessWidget {
                           ),
                           children: [
                             TileLayer(
-                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              urlTemplate:
+                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                               userAgentPackageName: 'com.bigplant.app',
                             ),
                             MarkerLayer(
@@ -1412,7 +1634,9 @@ class _DistributionCard extends StatelessWidget {
                         top: 0,
                         bottom: 0,
                         child: IgnorePointer(
-                          child: CustomPaint(painter: _DottedMapOverlayPainter()),
+                          child: CustomPaint(
+                            painter: _DottedMapOverlayPainter(),
+                          ),
                         ),
                       ),
                       const Center(
@@ -1474,10 +1698,10 @@ class _DistributionCard extends StatelessWidget {
 
   LatLng _centerPoint(List<PlantDistributionPoint> points) {
     if (points.isEmpty) return const LatLng(16.0471, 108.2068);
-    final latAvg = points.fold<double>(0, (sum, item) => sum + item.lat) /
-        points.length;
-    final lngAvg = points.fold<double>(0, (sum, item) => sum + item.lng) /
-        points.length;
+    final latAvg =
+        points.fold<double>(0, (sum, item) => sum + item.lat) / points.length;
+    final lngAvg =
+        points.fold<double>(0, (sum, item) => sum + item.lng) / points.length;
     return LatLng(latAvg, lngAvg);
   }
 }
@@ -1568,9 +1792,9 @@ class _DistributionListTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.onSurface,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(color: AppColors.onSurface),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1612,9 +1836,11 @@ class _DistributionMapScreenState extends State<_DistributionMapScreen> {
 
   LatLng get _center {
     if (widget.points.isEmpty) return const LatLng(16.0471, 108.2068);
-    final latAvg = widget.points.fold<double>(0, (sum, item) => sum + item.lat) /
+    final latAvg =
+        widget.points.fold<double>(0, (sum, item) => sum + item.lat) /
         widget.points.length;
-    final lngAvg = widget.points.fold<double>(0, (sum, item) => sum + item.lng) /
+    final lngAvg =
+        widget.points.fold<double>(0, (sum, item) => sum + item.lng) /
         widget.points.length;
     return LatLng(latAvg, lngAvg);
   }
@@ -1679,16 +1905,20 @@ class _DistributionMapScreenState extends State<_DistributionMapScreen> {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: AppColors.primary,
+                        ),
                       ),
                       Expanded(
                         child: Text(
                           widget.title,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: AppColors.primary,
-                            fontSize: 24,
-                          ),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 24,
+                              ),
                         ),
                       ),
                       const SizedBox(width: 48),
@@ -1724,22 +1954,18 @@ class _DistributionMapScreenState extends State<_DistributionMapScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   t.t('distribution_ecology_title'),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelLarge
+                                  style: Theme.of(context).textTheme.labelLarge
                                       ?.copyWith(color: AppColors.onSurface),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              t.t('distribution_found_template').replaceFirst(
-                                    '{count}',
-                                    '$locationCount',
-                                  ),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.onSurfaceVariant,
-                              ),
+                              t
+                                  .t('distribution_found_template')
+                                  .replaceFirst('{count}', '$locationCount'),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: AppColors.onSurfaceVariant),
                             ),
                             const SizedBox(height: 12),
                             Wrap(
@@ -1747,7 +1973,9 @@ class _DistributionMapScreenState extends State<_DistributionMapScreen> {
                               runSpacing: 8,
                               children: [
                                 _MapChip(label: t.t('distribution_biome_chip')),
-                                _MapChip(label: t.t('distribution_humidity_chip')),
+                                _MapChip(
+                                  label: t.t('distribution_humidity_chip'),
+                                ),
                               ],
                             ),
                           ],
@@ -1794,8 +2022,119 @@ class _MapChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.onSurfaceVariant,
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant),
+      ),
+    );
+  }
+}
+
+class _ScanSuccessBanner extends StatelessWidget {
+  const _ScanSuccessBanner({required this.visible, required this.plantName});
+
+  final bool visible;
+  final String plantName;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: AnimatedSlide(
+        offset: visible ? Offset.zero : const Offset(0, -1.5),
+        duration: const Duration(milliseconds: 420),
+        curve: visible ? Curves.easeOutBack : Curves.easeInCubic,
+        child: AnimatedOpacity(
+          opacity: visible ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 300),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color.fromARGB(255, 30, 134, 85), Color(0xFF25A26A)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF25A26A).withValues(alpha: 0.40),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context).t('scan_success_title'),
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                                letterSpacing: 0.5,
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          plantName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      AppLocalizations.of(context).t('scan_success_badge'),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

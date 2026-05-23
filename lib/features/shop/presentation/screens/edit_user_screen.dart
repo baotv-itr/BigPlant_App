@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../auth/data/storage_service.dart';
+import '../../../auth/domain/auth_service.dart';
 
 class EditUserScreen extends StatefulWidget {
   const EditUserScreen({
@@ -39,7 +40,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     super.initState();
     _fullNameCtrl = TextEditingController(text: widget.fullName);
     _phoneCtrl = TextEditingController(text: widget.phoneNumber);
-    _gender = widget.gender.isEmpty ? 'unknown' : widget.gender;
+    _gender = (widget.gender.isEmpty || widget.gender == 'unknown') ? 'other' : widget.gender;
     _selectedDate = _parseDate(widget.dateOfBirth);
   }
 
@@ -117,20 +118,27 @@ class _EditUserScreenState extends State<EditUserScreen> {
     }
 
     setState(() => _saving = true);
-    await StorageService.saveUserProfile(
-      userName: widget.userName,
-      email: widget.email,
-      fullName: _fullNameCtrl.text.trim(),
-      phoneNumber: phone,
-      dateOfBirth: _formatDate(_selectedDate),
-      gender: _gender,
-    );
-    if (!mounted) return;
-    setState(() => _saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(t.t('settings_saved'))),
-    );
-    Navigator.of(context).pop(true);
+    try {
+      final AuthService authService = AuthService();
+      await authService.updateProfile(
+        fullName: _fullNameCtrl.text.trim(),
+        phoneNumber: phone,
+        dateOfBirth: _formatDate(_selectedDate),
+        gender: _gender,
+      );
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t.t('settings_saved'))),
+      );
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update profile: $e')),
+      );
+    }
   }
 
   void _showAvatarMessage() {
@@ -277,10 +285,14 @@ class _EditUserScreenState extends State<EditUserScreen> {
                 ],
               ),
               const SizedBox(height: 6),
-              Text(
-                '${_handleLabel()} • ${t.t('settings_profile_secure_account')}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.outline,
+              Padding(
+                padding: const EdgeInsets.only(top: 3),
+                child: Text(
+                  '${_handleLabel()} • ${t.t('settings_profile_secure_account')}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.outline,
+                    fontSize: (theme.textTheme.bodySmall?.fontSize ?? 12) + 1,
+                  ),
                 ),
               ),
             ],
@@ -337,21 +349,27 @@ class _EditUserScreenState extends State<EditUserScreen> {
                   icon: Icons.badge,
                   child: TextField(
                     controller: _fullNameCtrl,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: (theme.textTheme.bodyMedium?.fontSize ?? 14) - 2,
+                    ),
                     decoration: _fieldDecoration(),
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 _LabeledInput(
                   label: t.t('settings_field_phone'),
                   icon: Icons.phone_iphone,
                   child: TextField(
                     controller: _phoneCtrl,
                     keyboardType: TextInputType.phone,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: (theme.textTheme.bodyMedium?.fontSize ?? 14) - 2,
+                    ),
                     decoration: _fieldDecoration(),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 _LabeledInput(
                   label: t.t('settings_field_date_of_birth'),
                   icon: Icons.calendar_month,
@@ -366,12 +384,13 @@ class _EditUserScreenState extends State<EditUserScreen> {
                           color: _selectedDate == null
                               ? AppColors.outline
                               : AppColors.onSurface,
+                          fontSize: (theme.textTheme.bodyMedium?.fontSize ?? 14) - 2,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -382,7 +401,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -390,33 +409,38 @@ class _EditUserScreenState extends State<EditUserScreen> {
                     border: Border.all(color: const Color(0xFFD8F3DC)),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Row(
-                    children: [
-                      for (final option in _genderOptions(t))
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: ChoiceChip(
-                              label: Center(child: Text(option.label)),
-                              selected: _gender == option.value,
-                              showCheckmark: false,
-                              onSelected: (_) => setState(() => _gender = option.value),
-                              selectedColor: AppColors.primary,
-                              backgroundColor: Colors.transparent,
-                              labelStyle: theme.textTheme.labelSmall?.copyWith(
-                                color: _gender == option.value
-                                    ? AppColors.onPrimary
-                                    : AppColors.outline,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              side: BorderSide.none,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        for (final option in _genderOptions(t))
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              child: ChoiceChip(
+                                label: Center(child: Text(option.label)),
+                                selected: _gender == option.value,
+                                showCheckmark: false,
+                                onSelected: (_) => setState(() => _gender = option.value),
+                                selectedColor: AppColors.primary,
+                                backgroundColor: Colors.transparent,
+                                labelStyle: theme.textTheme.labelSmall?.copyWith(
+                                  color: _gender == option.value
+                                      ? AppColors.onPrimary
+                                      : AppColors.outline,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                side: BorderSide.none,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -468,7 +492,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     return InputDecoration(
       filled: true,
       fillColor: AppColors.surface,
-      contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: Color(0xFFD8F3DC)),
@@ -488,7 +512,6 @@ class _EditUserScreenState extends State<EditUserScreen> {
       _GenderOption(value: 'male', label: t.t('settings_gender_male')),
       _GenderOption(value: 'female', label: t.t('settings_gender_female')),
       _GenderOption(value: 'other', label: t.t('settings_gender_other')),
-      _GenderOption(value: 'unknown', label: t.t('settings_gender_unknown')),
     ];
   }
 }
@@ -563,26 +586,26 @@ class _ReadonlyField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: AppColors.outline,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 6),
         Row(
           children: [
             Expanded(
               child: Text(
-                value,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.onSurfaceVariant,
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.outline,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
             if (trailing != null) trailing!,
           ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -612,7 +635,7 @@ class _LabeledInput extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -655,7 +678,7 @@ class _StaticSettingsBottomBar extends StatelessWidget {
       child: AbsorbPointer(
         child: Row(
           children: const [
-            _StaticNavItem(icon: Icons.potted_plant, label: 'Home'),
+            _StaticNavItem(icon: Icons.local_florist, label: 'Home'),
             _StaticNavItem(icon: Icons.center_focus_strong, label: 'Scan'),
             _StaticNavItem(icon: Icons.shopping_bag, label: 'Cart'),
             _StaticNavItem(icon: Icons.settings, label: 'Settings', selected: true),
